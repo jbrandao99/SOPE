@@ -9,25 +9,34 @@
 int main(int argc, char *argv[]) {
 
     struct stat buf;
-    struct tm* mytm;
-    char t[20];
-    time_t mytime;
+    struct tm* mytmm; //time modified
+    struct tm* mytmc; //time created
+    char tm[20]; //time modified
+    char tc[20]; //time created
+    time_t mytimem; //time modified
+    time_t mytimec;  //time created
     
-    mytime = time(&buf.st_mtime);
-    mytm = localtime(&mytime);
-    
-    strftime(t,20,"%Y-%m-%dT%H:%M:%S",mytm);
-
     if(argc == 2)
     {
         stat(argv[1],&buf);
 
+        mytimem = time(&buf.st_mtime);
+        mytmm = localtime(&mytimem);
+
+        mytimec = time(&buf.st_ctime);
+        mytmc = localtime(&mytimec);
+    
+        strftime(tm,20,"%Y-%m-%dT%H:%M:%S",mytmm);
+        strftime(tc,20,"%Y-%m-%dT%H:%M:%S",mytmc);
+
         printf("%s,", argv[1]);
+        printf("%d",type);
         printf("%ld,",buf.st_size);
         printf((buf.st_mode & S_IRUSR) ? "r" : "");
         printf((buf.st_mode & S_IWUSR) ? "w" : "");
         printf((buf.st_mode & S_IXUSR) ? "x" : ",");
-        printf("%s,",t);
+        printf("%s,",tc);
+        printf("%s",tm);
         printf("\n");
         exit(EXIT_SUCCESS);
 
