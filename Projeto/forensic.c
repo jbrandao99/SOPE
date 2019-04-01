@@ -4,10 +4,19 @@
 #include <time.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char *argv[]) {
 
     struct stat buf;
+    struct tm* mytm;
+    char t[20];
+    time_t mytime;
+    
+    mytime = time(&buf.st_mtime);
+    mytm = localtime(&mytime);
+    
+    strftime(t,20,"%Y-%m-%dT%H:%M:%S",mytm);
 
     if(argc == 2)
     {
@@ -15,11 +24,11 @@ int main(int argc, char *argv[]) {
 
         printf("%s,", argv[1]);
         printf("%ld,",buf.st_size);
-        printf("%s,", ctime(&buf.st_mtime));
-        printf((buf.st_mode & S_IRUSR) ? "r" : "-");
-        printf((buf.st_mode & S_IWUSR) ? "w" : "-");
-        printf((buf.st_mode & S_IXUSR) ? "x" : "-");
-
+        printf((buf.st_mode & S_IRUSR) ? "r" : "");
+        printf((buf.st_mode & S_IWUSR) ? "w" : "");
+        printf((buf.st_mode & S_IXUSR) ? "x" : ",");
+        printf("%s,",t);
+        printf("\n");
         exit(EXIT_SUCCESS);
 
     }
