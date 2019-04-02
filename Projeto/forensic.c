@@ -11,12 +11,12 @@
 #define BUFF 256
 
 char *filetype(char *argv, char *funcao);
-int WriteOnFile(int argc, char *argv[]);
-int WriteOnSTDOUT(int argc, char *argv[]);
+void WriteOnFile(int argc, char *argv[]);
+void WriteOnSTDOUT(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
-    //WriteOnSTDOUT(argc, argv);
+    WriteOnSTDOUT(argc, argv);
     WriteOnFile(argc, argv);
 }
 
@@ -91,7 +91,7 @@ char *filetype(char *argv, char *funcao)
     }
 }
 
-int WriteOnFile(int argc, char *argv[])
+void WriteOnFile(int argc, char *argv[])
 {
     int fd;
     fd = open("file.txt", O_WRONLY | O_APPEND);
@@ -100,7 +100,7 @@ int WriteOnFile(int argc, char *argv[])
     close(fd);
 }
 
-int WriteOnSTDOUT(int argc, char *argv[])
+void WriteOnSTDOUT(int argc, char *argv[])
 {
     struct stat buf;
     char tm[20]; //time modified
@@ -134,12 +134,9 @@ int WriteOnSTDOUT(int argc, char *argv[])
         printf("%s", hash_sha256);
 
         printf("\n");
-        exit(EXIT_SUCCESS);
     }
     else
     {
         perror("No arguments!");
-        exit(EXIT_FAILURE);
     }
-    return 0;
 }
