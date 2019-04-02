@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-char* filetype(char* argv)
+char* filetype(char* argv,char* funcao)
 {
     int link[2];
     __pid_t pid;
