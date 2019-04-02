@@ -6,54 +6,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+
+#define BUFF 256
 
 char *filetype(char *argv, char *funcao);
+int WriteOnFile(int argc, char *argv[]);
+int WriteOnSTDOUT(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
-
-    struct stat buf;
-    char tm[20]; //time modified
-    char tc[20]; //time created
-    char *type;
-    char *hash_sha1;
-    char *hash_sha256;
-    char *hash_md5;
-
-    if (argc == 2)
-    {
-        stat(argv[1], &buf);
-
-        strftime(tm, 20, "%Y-%m-%dT%H:%M:%S", localtime(&(buf.st_mtime)));
-        strftime(tc, 20, "%Y-%m-%dT%H:%M:%S", localtime(&(buf.st_ctime)));
-
-        printf("%s,", argv[1]);
-        type = filetype(argv[1], "file");
-        printf("%s,", type);
-        printf("%ld,", buf.st_size);
-        printf((buf.st_mode & S_IRUSR) ? "r" : "");
-        printf((buf.st_mode & S_IWUSR) ? "w" : "");
-        printf((buf.st_mode & S_IXUSR) ? "x" : ",");
-        printf("%s,", tc);
-        printf("%s", tm);
-        printf(",");
-        hash_md5 = filetype(argv[1], "md5sum");
-        printf("%s,", hash_md5);
-        hash_sha1 = filetype(argv[1], "sha1sum");
-        printf("%s,", hash_sha1);
-        hash_sha256 = filetype(argv[1], "sha256sum");
-        printf("%s", hash_sha256);
-
-        printf("\n");
-        exit(EXIT_SUCCESS);
-    }
-    else
-    {
-        perror("No arguments!");
-        exit(EXIT_FAILURE);
-    }
-
-    return 0;
+    //WriteOnSTDOUT(argc, argv);
+    WriteOnFile(argc, argv);
 }
 
 char *filetype(char *argv, char *funcao)
@@ -112,7 +76,8 @@ char *filetype(char *argv, char *funcao)
             {
                 final[i] = foo[i];
             }
-        }else if (strcmp("md5sum", funcao) == 0)
+        }
+        else if (strcmp("md5sum", funcao) == 0)
         {
             for (unsigned int i = 0; i < 32; i++)
             {
@@ -124,4 +89,57 @@ char *filetype(char *argv, char *funcao)
         wait(NULL);
         return strdup(&final[0]);
     }
+}
+
+int WriteOnFile(int argc, char *argv[])
+{
+    int fd;
+    fd = open("file.txt", O_WRONLY | O_APPEND);
+    dup2(fd, STDOUT_FILENO);
+    WriteOnSTDOUT(argc, argv);
+    close(fd);
+}
+
+int WriteOnSTDOUT(int argc, char *argv[])
+{
+    struct stat buf;
+    char tm[20]; //time modified
+    char tc[20]; //time created
+    char *type;
+    char *hash_sha1;
+    char *hash_sha256;
+    char *hash_md5;
+
+    if (argc == 2)
+    {
+        stat(argv[1], &buf);
+        strftime(tm, 20, "%Y-%m-%dT%H:%M:%S", localtime(&(buf.st_mtime)));
+        strftime(tc, 20, "%Y-%m-%dT%H:%M:%S", localtime(&(buf.st_ctime)));
+
+        printf("%s,", argv[1]);
+        type = filetype(argv[1], "file");
+        printf("%s,", type);
+        printf("%ld,", buf.st_size);
+        printf((buf.st_mode & S_IRUSR) ? "r" : "");
+        printf((buf.st_mode & S_IWUSR) ? "w" : "");
+        printf((buf.st_mode & S_IXUSR) ? "x" : ",");
+        printf("%s,", tc);
+        printf("%s", tm);
+        printf(",");
+        hash_md5 = filetype(argv[1], "md5sum");
+        printf("%s,", hash_md5);
+        hash_sha1 = filetype(argv[1], "sha1sum");
+        printf("%s,", hash_sha1);
+        hash_sha256 = filetype(argv[1], "sha256sum");
+        printf("%s", hash_sha256);
+
+        printf("\n");
+        exit(EXIT_SUCCESS);
+    }
+    else
+    {
+        perror("No arguments!");
+        exit(EXIT_FAILURE);
+    }
+    return 0;
 }
