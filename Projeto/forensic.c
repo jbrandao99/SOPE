@@ -56,11 +56,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-<<<<<<< HEAD
-char* filetype(char* argv,char* funcao)
-=======
 char *filetype(char *argv, char *funcao)
->>>>>>> 6fbdb029d6daef6f73456f3c10be4b0ba904a44a
 {
     int link[2];
     __pid_t pid;
