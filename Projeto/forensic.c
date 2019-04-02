@@ -7,7 +7,7 @@
 #include <string.h>
 #include <sys/wait.h>
 
-char (*filetype(char * argv));
+char* filetype(char * argv);
 
 int main(int argc, char *argv[]) {
 
@@ -24,9 +24,9 @@ int main(int argc, char *argv[]) {
         strftime(tc,20,"%Y-%m-%dT%H:%M:%S",localtime(&(buf.st_ctime)));
 
         printf("%s,", argv[1]);
-        printf("%ld,",buf.st_size);
         type = filetype(argv[1]);
         printf("%s,",type);
+        printf("%ld,",buf.st_size);
         printf((buf.st_mode & S_IRUSR) ? "r" : "");
         printf((buf.st_mode & S_IWUSR) ? "w" : "");
         printf((buf.st_mode & S_IXUSR) ? "x" : ",");
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-char (*filetype(char * argv))
+char* filetype(char* argv)
 {
     int link[2];
     __pid_t pid;
@@ -62,6 +62,7 @@ char (*filetype(char * argv))
         close(link[0]);
         close(link[1]);
         execlp("file", "file", argv, NULL);
+        exit(EXIT_SUCCESS);
     }
     else
     {
@@ -74,7 +75,7 @@ char (*filetype(char * argv))
         int k=0;
         int t=0;
         while(k<strlen(foo)){
-            if(foo[k]!='0'){
+            if(foo[k]!='0' && foo[k]!='\n' && foo[k] != ','){
                 final[t]=foo[k];
                 t++;
                 k++;
@@ -82,7 +83,8 @@ char (*filetype(char * argv))
             }
             k++;
         }
-        return final;
+        //printf("cacl: %s",final);
         wait(NULL);
+        return strdup(&final[0]);
     }
 }
