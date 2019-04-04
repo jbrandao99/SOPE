@@ -205,5 +205,5 @@ void getDirectory(char *argv)
             //isDirectory(dent->d_name);
         }
     }
-    close(dir);
+    closedir(dir);
 }

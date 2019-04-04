@@ -1,24 +1,9 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdlib.h>
+#include "tratastring.h"
 
-
-int main(int argc, char* argv[], char* envp[])
+int main(int argc,char* argv[])
 {
-    int fd = open("file.txt",O_WRONLY | O_CREAT | O_RDONLY,0600);
-
-    if(fd == -1)
-    {
-        perror("Error opening or creating the file");
-        exit(1);
-    }
-
-    write(fd,"Nice job!\n", 11);
-
-    close(fd);
-
+    printf("%d\n", argc);
+    char* teste = funcaoexec(argv[1],"file");
+    printf("%s", teste);
     return 0;
 }

@@ -7,5 +7,4 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-
-#define BUFF 256
+#include <dirent.h>
