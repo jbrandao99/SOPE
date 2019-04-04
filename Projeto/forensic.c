@@ -11,8 +11,6 @@
 
 #define BUFF 256
 
-char path[4096];
-
 char *filetype(char *argv, char *funcao);
 void WriteOnFile(int argc, char *argv);
 void WriteOnSTDOUT(int argc, char *argv);
@@ -23,7 +21,6 @@ int main(int argc, char *argv[])
 {
     //WriteOnSTDOUT(argc, argv);
     //WriteOnFile(argc, argv);
-    strcpy(path, argv[1]);
     isDirectory(argv[1]);
 }
 
@@ -33,6 +30,8 @@ char *filetype(char *argv, char *funcao)
     __pid_t pid;
     char foo[4096];
     char final[4096];
+    memset(foo, 0x00, 4096);
+    memset(final, 0x00, 4096);
     pipe(link);
     pid = fork();
 
@@ -151,13 +150,12 @@ void WriteOnSTDOUT(int argc, char *argv)
 void isDirectory(char *argv)
 {
     char *type = filetype(argv, "file");
-    //printf("%s", type);
     if (strcmp("directory", type) == 0)
     {
         getDirectory(argv);
-    }
+    }/*
     else
-        WriteOnSTDOUT(2, argv);
+        WriteOnSTDOUT(2, argv);*/
 }
 
 void getDirectory(char *argv)
@@ -165,31 +163,46 @@ void getDirectory(char *argv)
     DIR *dir;
     struct dirent *dent;
     dir = opendir(argv);
-    pid_t pid = fork();
+    pid_t pid;
+    char path[4096];
+    strcpy(path, argv);
+    char aux[4069];
     if (dir != NULL)
     {
         while ((dent = readdir(dir)) != NULL)
         {
-            if ((strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0 || (*dent->d_name) == '.'))
+            if (strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0)
+                continue;
+
+            strcpy(aux, path);
+            strcat(aux, "/");
+            strcat(aux, dent->d_name);
+            //printf("%s\n", aux);
+            //printf("%s\n", filetype(aux, "file"));
+            //printf("////////////////////////////////////////////////\n");
+            if (strcmp("directory", filetype(aux, "file")) != 0)
             {
+                isDirectory(aux);
+                continue;
+            }
+
+            pid = fork();
+            if (pid == 0)
+            {
+                strcat(path, "/");
+                strcat(path, dent->d_name);
+                //printf("%s\n", path);
+                //printf("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+                getDirectory(path);
+                break;
             }
             else
             {
-                if (pid == 0)
-                {
-                    strcat(path, "/");
-                    strcat(path, dent->d_name);
-                    isDirectory(path);
-                    printf("%s", path);
-                }
-                else
-                {
-                    wait(NULL);
-                }
-                printf(dent->d_name);
-                printf("\n");
-                //isDirectory(dent->d_name);
+                wait(NULL);
             }
+            //printf(dent->d_name);
+            //printf("\n");
+            //isDirectory(dent->d_name);
         }
     }
     close(dir);
