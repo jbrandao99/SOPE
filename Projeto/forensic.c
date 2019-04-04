@@ -153,9 +153,9 @@ void isDirectory(char *argv)
     if (strcmp("directory", type) == 0)
     {
         getDirectory(argv);
-    }/*
+    }
     else
-        WriteOnSTDOUT(2, argv);*/
+        WriteOnSTDOUT(2, argv);
 }
 
 void getDirectory(char *argv)
