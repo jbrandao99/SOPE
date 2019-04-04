@@ -1,6 +1,6 @@
 #include "funcaoexec.h"
 
-char* funcaoexec(char *argv, char *funcao)
+char *funcaoexec(char *argv, char *funcao)
 {
     int link[2];
     __pid_t pid;

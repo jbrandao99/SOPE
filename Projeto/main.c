@@ -1,9 +1,9 @@
 #include "tratastring.h"
 
-int main(int argc,char* argv[])
+int main()
 {
-    printf("%d\n", argc);
-    char* teste = funcaoexec(argv[1],"file");
+    char *teste;
+    teste = typestring("file.txt: ASCII text","file.txt");
     printf("%s", teste);
     return 0;
 }
