@@ -241,17 +241,14 @@ int main(int argc, char *argv[])
     extern char *optarg;
     if (argc == 2)
     {
-        //forensic hello.txt
-        printf("forensic hello.txt\n");
+        WriteOnSTDOUT(2,argv[1]);
     }
     while ((c = getopt(argc, argv, "r:h:o:hov:")) != -1)
     {
         switch (c)
         {
         case 'r':
-            // forensic -r folder
-            // analisar todos os ficheiros do diretório indicado e de todos os seus subdiretórios.
-            printf("Analisando os ficheiros do diretorio: %s\n", optarg);
+            isDirectory(argv[2]);
             break;
 
         case 'h': // forensic -h sha1,sha256 hello.txt
