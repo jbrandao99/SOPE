@@ -4,7 +4,7 @@
 #include <getopt.h>
 #include <string.h>
 
-char *filetype(char *opt)
+char *hashstring(char *opt)
 {
   char *type;
   char *erro = "erro";
