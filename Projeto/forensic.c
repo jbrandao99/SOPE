@@ -7,17 +7,24 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <dirent.h>
 
 #define BUFF 256
 
+char path[4096];
+
 char *filetype(char *argv, char *funcao);
-void WriteOnFile(int argc, char *argv[]);
-void WriteOnSTDOUT(int argc, char *argv[]);
+void WriteOnFile(int argc, char *argv);
+void WriteOnSTDOUT(int argc, char *argv);
+void getDirectory(char *argv);
+void isDirectory(char *argv);
 
 int main(int argc, char *argv[])
 {
-    WriteOnSTDOUT(argc, argv);
-    WriteOnFile(argc, argv);
+    //WriteOnSTDOUT(argc, argv);
+    //WriteOnFile(argc, argv);
+    strcpy(path, argv[1]);
+    isDirectory(argv[1]);
 }
 
 char *filetype(char *argv, char *funcao)
@@ -91,7 +98,7 @@ char *filetype(char *argv, char *funcao)
     }
 }
 
-void WriteOnFile(int argc, char *argv[])
+void WriteOnFile(int argc, char *argv)
 {
     int fd;
     fd = open("file.txt", O_WRONLY | O_APPEND);
@@ -100,7 +107,7 @@ void WriteOnFile(int argc, char *argv[])
     close(fd);
 }
 
-void WriteOnSTDOUT(int argc, char *argv[])
+void WriteOnSTDOUT(int argc, char *argv)
 {
     struct stat buf;
     char tm[20]; //time modified
@@ -112,12 +119,12 @@ void WriteOnSTDOUT(int argc, char *argv[])
 
     if (argc == 2)
     {
-        stat(argv[1], &buf);
+        stat(argv, &buf);
         strftime(tm, 20, "%Y-%m-%dT%H:%M:%S", localtime(&(buf.st_mtime)));
         strftime(tc, 20, "%Y-%m-%dT%H:%M:%S", localtime(&(buf.st_ctime)));
 
-        printf("%s,", argv[1]);
-        type = filetype(argv[1], "file");
+        printf("%s,", argv);
+        type = filetype(argv, "file");
         printf("%s,", type);
         printf("%ld,", buf.st_size);
         printf((buf.st_mode & S_IRUSR) ? "r" : "");
@@ -126,11 +133,11 @@ void WriteOnSTDOUT(int argc, char *argv[])
         printf("%s,", tc);
         printf("%s", tm);
         printf(",");
-        hash_md5 = filetype(argv[1], "md5sum");
+        hash_md5 = filetype(argv, "md5sum");
         printf("%s,", hash_md5);
-        hash_sha1 = filetype(argv[1], "sha1sum");
+        hash_sha1 = filetype(argv, "sha1sum");
         printf("%s,", hash_sha1);
-        hash_sha256 = filetype(argv[1], "sha256sum");
+        hash_sha256 = filetype(argv, "sha256sum");
         printf("%s", hash_sha256);
 
         printf("\n");
@@ -139,4 +146,51 @@ void WriteOnSTDOUT(int argc, char *argv[])
     {
         perror("No arguments!");
     }
+}
+
+void isDirectory(char *argv)
+{
+    char *type = filetype(argv, "file");
+    //printf("%s", type);
+    if (strcmp("directory", type) == 0)
+    {
+        getDirectory(argv);
+    }
+    else
+        WriteOnSTDOUT(2, argv);
+}
+
+void getDirectory(char *argv)
+{
+    DIR *dir;
+    struct dirent *dent;
+    dir = opendir(argv);
+    pid_t pid = fork();
+    if (dir != NULL)
+    {
+        while ((dent = readdir(dir)) != NULL)
+        {
+            if ((strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0 || (*dent->d_name) == '.'))
+            {
+            }
+            else
+            {
+                if (pid == 0)
+                {
+                    strcat(path, "/");
+                    strcat(path, dent->d_name);
+                    isDirectory(path);
+                    printf("%s", path);
+                }
+                else
+                {
+                    wait(NULL);
+                }
+                printf(dent->d_name);
+                printf("\n");
+                //isDirectory(dent->d_name);
+            }
+        }
+    }
+    close(dir);
 }
