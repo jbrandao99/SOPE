@@ -11,6 +11,7 @@ char *filetype(char *opt)
   type=opt;
   if( strcmp("md5", opt)== 0)
   {
+    //IMPRESSAO DE MD5
     return type;
   }
   else if(strcmp("sha256 ", opt)== 0)
@@ -49,6 +50,12 @@ int main(int argc, char *argv[])
 int c;
 char *ifile;
 extern char *optarg;
+if (argc == 2)
+   {
+     //forensic hello.txt
+      printf("forensic hello.txt\n");
+
+   }
 while((c=getopt(argc,argv,"r:h:o:hov:")) != -1)
 {
 switch(c)
@@ -66,7 +73,6 @@ if(filetype(optarg)== "erro")
 {
   exit(0);
 }
-
 printf("%s\n",filetype(optarg));
 break;
 
@@ -80,26 +86,14 @@ case 'o':
 //armazenar os dados da análise no ficheiro indicado (e não na saída padrão). O ficheiro terá, naturalmente,o formato CSV (comma-separated values), devido à forma como a informação é apresentada.
 printf("Data saved on file %s,\n",optarg); //output.txt)
 printf("Execution records saved on file ...\n");
-
 break;
 
 case '?':
-
 break;
 
 default: //forensic hello.txt
-fprintf(stderr,"getopt");
 break;
-
-
 return 0;
 }
-
-
-
-
 }
-
-
-
 }
