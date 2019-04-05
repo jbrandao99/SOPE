@@ -12,16 +12,23 @@
 #define BUFF 256
 
 char *filetype(char *argv, char *funcao);
-void WriteOnFile(int argc, char *argv);
-void WriteOnSTDOUT(int argc, char *argv);
+void WriteOnFile(int argc, char *argv, char* hash, char* out);
+void WriteOnSTDOUT(int argc, char *argv, char* hash);
 void getDirectory(char *argv);
 void isDirectory(char *argv);
 
 int main(int argc, char *argv[])
 {
+    int p;
+    p = putenv("LOGFILENAME=registos.txt");
+    printf("%d\n",p);
     //WriteOnSTDOUT(argc, argv);
     //WriteOnFile(argc, argv);
-    isDirectory(argv[1]);
+    //isDirectory(argv[1]);
+    char* l;
+    l = getenv("LOGFILENAME");
+    printf("%s\n",l);
+    return 0;
 }
 
 char *filetype(char *argv, char *funcao)
@@ -97,16 +104,16 @@ char *filetype(char *argv, char *funcao)
     }
 }
 
-void WriteOnFile(int argc, char *argv)
+void WriteOnFile(int argc, char *argv, char* hash, char* out)
 {
     int fd;
-    fd = open("file.txt", O_WRONLY | O_APPEND);
+    fd = open(out, O_WRONLY | O_APPEND);
     dup2(fd, STDOUT_FILENO);
-    WriteOnSTDOUT(argc, argv);
+    WriteOnSTDOUT(argc, argv, hash);
     close(fd);
 }
 
-void WriteOnSTDOUT(int argc, char *argv)
+void WriteOnSTDOUT(int argc, char *argv, char* hash)
 {
     struct stat buf;
     char tm[20]; //time modified
@@ -131,15 +138,77 @@ void WriteOnSTDOUT(int argc, char *argv)
         printf((buf.st_mode & S_IXUSR) ? "x" : ",");
         printf("%s,", tc);
         printf("%s", tm);
-        printf(",");
-        hash_md5 = filetype(argv, "md5sum");
-        printf("%s,", hash_md5);
-        hash_sha1 = filetype(argv, "sha1sum");
-        printf("%s,", hash_sha1);
-        hash_sha256 = filetype(argv, "sha256sum");
-        printf("%s", hash_sha256);
-
-        printf("\n");
+        if(strcmp(hash,"") == 0)
+        {
+            printf('\n');
+            return;
+        }
+        else if(strcmp(hash,"md5") == 0)
+        {
+            printf(",");
+            hash_md5 = filetype(argv, "md5sum");
+            printf("%s", hash_md5);
+            printf('\n');
+            return;
+        }
+        else if(strcmp(hash,"sha1") == 0)
+        {
+            printf(",");
+            hash_sha1 = filetype(argv, "sha1sum");
+            printf("%s", hash_sha1);
+            printf('\n');
+            return;
+        }
+        else if(strcmp(hash,"sha256") == 0)
+        {
+            printf(",");
+            hash_sha256 = filetype(argv, "sha256sum");
+            printf("%s", hash_sha256);
+            printf('\n');
+            return;
+        }
+        else if(strcmp(hash,"md5,sha1") == 0)
+        {
+            printf(",");
+            hash_md5 = filetype(argv, "md5sum");
+            printf("%s,", hash_md5);
+            hash_sha1 = filetype(argv, "sha1sum");
+            printf("%s", hash_sha1);
+            printf('\n');
+            return;
+        }
+        else if(strcmp(hash,"md5,sha256") == 0)
+        {
+            printf(",");
+            hash_md5 = filetype(argv, "md5sum");
+            printf("%s,", hash_md5);
+            hash_sha256 = filetype(argv, "sha256sum");
+            printf("%s", hash_sha256);
+            printf('\n');
+            return;
+        }
+        else if(strcmp(hash,"sha1,sha256") == 0)
+        {
+            printf(",");
+            hash_sha1 = filetype(argv, "sha1sum");
+            printf("%s,", hash_sha1);
+            hash_sha256 = filetype(argv, "sha256sum");
+            printf("%s", hash_sha256);
+            printf('\n');
+            return;
+        }
+        else
+        {
+            printf(",");
+            hash_md5 = filetype(argv, "md5sum");
+            printf("%s,", hash_md5);
+            hash_sha1 = filetype(argv, "sha1sum");
+            printf("%s,", hash_sha1);
+            hash_sha256 = filetype(argv, "sha256sum");
+            printf("%s", hash_sha256);
+            printf('\n');
+            return;
+        }
     }
     else
     {
@@ -155,7 +224,7 @@ void isDirectory(char *argv)
         getDirectory(argv);
     }
     else
-        WriteOnSTDOUT(2, argv);
+        WriteOnSTDOUT(2, argv,"");
 }
 
 void getDirectory(char *argv)
