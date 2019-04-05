@@ -24,6 +24,7 @@ static void sigint_handler(int sig) {
 
   signal(sig, SIG_IGN);
   printf("Processo fechado!\n");
+  exit(0);
 }
 
 char *filetype(char *argv, char *funcao)
@@ -284,13 +285,9 @@ int main(int argc, char *argv[])
 {
   struct sigaction sa;
   sa.sa_handler = sigint_handler;
-  sa.sa_flags = 0;
   sigemptyset(&sa.sa_mask);
-  if (sigaction(SIGINT, &sa, NULL) == -1) {
-   printf("Unable to install handler\n");
-   return -6;
- }
-
+  sa.sa_flags = 0;
+  sigaction(SIGINT, &sa, NULL);
 
     if (argc == 2)
     {
