@@ -146,6 +146,7 @@ void writeecra(char *argv)
     printf((buf.st_mode & S_IXUSR) ? "x" : ",");
     printf("%s,", tc);
     printf("%s", tm);
+
 }
 
 void WriteOnSTDOUT(int argc, char *argv, char *hash)
@@ -160,7 +161,7 @@ void WriteOnSTDOUT(int argc, char *argv, char *hash)
         {
             writeecra(argv);
             printf("%s\n", hash);
-            return;
+            exit(0);
         }
         else if (strcmp(hash, "md5") == 0)
         {
@@ -168,7 +169,7 @@ void WriteOnSTDOUT(int argc, char *argv, char *hash)
             printf(",");
             hash_md5 = filetype(argv, "md5sum");
             printf("%s\n", hash_md5);
-            return;
+            exit(0);
         }
         else if (strcmp(hash, "sha1") == 0)
         {
@@ -176,7 +177,7 @@ void WriteOnSTDOUT(int argc, char *argv, char *hash)
             printf(",");
             hash_sha1 = filetype(argv, "sha1sum");
             printf("%s\n", hash_sha1);
-            return;
+            exit(0);
         }
         else if (strcmp(hash, "sha256") == 0)
         {
@@ -184,7 +185,7 @@ void WriteOnSTDOUT(int argc, char *argv, char *hash)
             printf(",");
             hash_sha256 = filetype(argv, "sha256sum");
             printf("%s\n", hash_sha256);
-            return;
+            exit(0);
         }
         else if (strcmp(hash, "md5,sha1") == 0)
         {
@@ -194,7 +195,7 @@ void WriteOnSTDOUT(int argc, char *argv, char *hash)
             printf("%s,", hash_md5);
             hash_sha1 = filetype(argv, "sha1sum");
             printf("%s\n", hash_sha1);
-            return;
+            exit(0);
         }
         else if (strcmp(hash, "md5,sha256") == 0)
         {
@@ -204,7 +205,7 @@ void WriteOnSTDOUT(int argc, char *argv, char *hash)
             printf("%s,", hash_md5);
             hash_sha256 = filetype(argv, "sha256sum");
             printf("%s\n", hash_sha256);
-            return;
+            exit(0);
         }
         else if (strcmp(hash, "sha1,sha256") == 0)
         {
@@ -214,7 +215,7 @@ void WriteOnSTDOUT(int argc, char *argv, char *hash)
             printf("%s,", hash_sha1);
             hash_sha256 = filetype(argv, "sha256sum");
             printf("%s\n", hash_sha256);
-            return;
+            exit(0);
         }
         else if (strcmp(hash, "md5,sha1,sha256") == 0)
         {
@@ -226,7 +227,7 @@ void WriteOnSTDOUT(int argc, char *argv, char *hash)
             printf("%s,", hash_sha1);
             hash_sha256 = filetype(argv, "sha256sum");
             printf("%s\n", hash_sha256);
-            return;
+            exit(0);
         }
         else
         {
@@ -392,6 +393,14 @@ int main(int argc, char *argv[])
         {
             exit(1);
         }
+    }
+    else if(argc == 6)
+    {
+      if(strcmp(argv[1], "-h") == 0 && strcmp(argv[3], "-o") == 0)
+      {
+        printf("Data saved on %s!\n",argv[4]);
+        WriteOnFile(6,argv[4],argv[2],argv[5]);
+      }
     }
     else
     {
