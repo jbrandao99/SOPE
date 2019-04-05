@@ -19,6 +19,8 @@ void isDirectory(char *argv);
 void writeecra(char *argv);
 void sigint_handler();
 void handler(int sig);
+void getDirectoryFile(char *argv,char* out);
+void isDirectoryFile(char *argv,char* out);
 
 void handler(int sig)
 {
@@ -249,6 +251,17 @@ void isDirectory(char *argv)
         WriteOnSTDOUT(2, argv, "");
 }
 
+void isDirectoryFile(char *argv,char* out)
+{
+    char *type = filetype(argv, "file");
+    if (strcmp("directory", type) == 0)
+    {
+        getDirectoryFile(argv,out);
+    }
+    else
+        WriteOnFile(2, argv, "",out);
+}
+
 void getDirectory(char *argv)
 {
     DIR *dir;
@@ -299,6 +312,56 @@ void getDirectory(char *argv)
     closedir(dir);
 }
 
+void getDirectoryFile(char *argv,char* out)
+{
+    DIR *dir;
+    struct dirent *dent;
+    dir = opendir(argv);
+    pid_t pid;
+    char path[4096];
+    strcpy(path, argv);
+    char aux[4069];
+    if (dir != NULL)
+    {
+        while ((dent = readdir(dir)) != NULL)
+        {
+            if (strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0)
+                continue;
+
+            strcpy(aux, path);
+            strcat(aux, "/");
+            strcat(aux, dent->d_name);
+            //printf("%s\n", aux);
+            //printf("%s\n", filetype(aux, "file"));
+            //printf("////////////////////////////////////////////////\n");
+            if (strcmp("directory", filetype(aux, "file")) != 0)
+            {
+                isDirectoryFile(aux,out);
+                continue;
+            }
+
+            pid = fork();
+            if (pid == 0)
+            {
+                strcat(path, "/");
+                strcat(path, dent->d_name);
+                //printf("%s\n", path);
+                //printf("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+                getDirectoryFile(path,out);
+                break;
+            }
+            else
+            {
+                wait(NULL);
+            }
+            //printf(dent->d_name);
+            //printf("\n");
+            //isDirectory(dent->d_name);
+        }
+    }
+    closedir(dir);
+}
+
 int main(int argc, char *argv[])
 {
     struct sigaction sa;
@@ -323,26 +386,7 @@ int main(int argc, char *argv[])
         }
         else if (strcmp(argv[1], "-o") == 0)
         {
-            int s1 = 0;
-            int s2 = 0;
-            char *type = filetype(argv[3], "file");
-            if (strcmp("directory", type) == 0)
-            {
-                getDirectory(argv[3]);
-                if (signal(SIGUSR1, handler) != SIG_ERR)
-                {
-                    s1++;
-                }
-            }
-            else
-            {
-                WriteOnFile(4, argv[3], "", argv[2]);
-                if (signal(SIGUSR2, handler) != SIG_ERR)
-                {
-                    s2++;
-                }
-            }
-            printf("New directory: %d/%d directories/files at this time.\n", s1, s2);
+            isDirectoryFile(argv[3],argv[2]);
         }
         else
         {

@@ -1,0 +1,125 @@
+file.txt,empty,0,rw,2019-04-05T14:15:13,2019-04-05T14:15:13
+
+0
+cenas/Aula 3/p1a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=e5c7e7a6a61a4bb5723c77c1bd42a93d1afc not stripped,8464,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 3/p1a.c,C source ASCII text,575,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 3/p4.c,C source ASCII text,224,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 3/p2,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=c5fd6f155f27cf2d7cc62e673dfcdcae21352d not stripped,8384,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 3/p4,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=536bcb4ef55d9bb435bb1fe6cac7c97b216c6 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 3/p3,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=37adeb6147a67e25551fe8ec645e53afbe93664 not stripped,8528,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 3/p2.c,C source ASCII text,322,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 3/p3.c,C source ASCII text,1099,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 5/p1b.c,C source ASCII text,1171,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.p1b.c.swp,Vim swap file version 8. pid 286 user jbrandao99 host jbrandao-VirtualBox file ~jbrandao99/Documentos/Aulas Pr\33\241ticas/Aula 5/p1b.c modified,12288,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=128341ed43a7f6cb3edd66fb749348f68b834 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1.c,C source ASCII text,1064,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c.c,C source ASCII text,1279,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=92c49df75e4afb7ed4482b7b64c8a2261b6 not stripped,12904,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1b,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=a194c8d466d75bd2a86f6d6521bd9ffd7c11e4 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.vscode/ipch/ba086112260e8a9b/p1b.ipch,data,2613248,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.vscode/ipch/ba086112260e8a9b/mmap_address.bin,data,8,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 5/p1b.c,C source ASCII text,1171,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.p1b.c.swp,Vim swap file version 8. pid 286 user jbrandao99 host jbrandao-VirtualBox file ~jbrandao99/Documentos/Aulas Pr\33\241ticas/Aula 5/p1b.c modified,12288,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=128341ed43a7f6cb3edd66fb749348f68b834 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1.c,C source ASCII text,1064,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c.c,C source ASCII text,1279,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=92c49df75e4afb7ed4482b7b64c8a2261b6 not stripped,12904,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1b,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=a194c8d466d75bd2a86f6d6521bd9ffd7c11e4 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.vscode/ipch/27d45fb02f697868/p1b.ipch,data,2613248,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.vscode/ipch/27d45fb02f697868/mmap_address.bin,X11 SNF font data MSB first,8,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 5/p1b.c,C source ASCII text,1171,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.p1b.c.swp,Vim swap file version 8. pid 286 user jbrandao99 host jbrandao-VirtualBox file ~jbrandao99/Documentos/Aulas Pr\33\241ticas/Aula 5/p1b.c modified,12288,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=128341ed43a7f6cb3edd66fb749348f68b834 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1.c,C source ASCII text,1064,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c.c,C source ASCII text,1279,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=92c49df75e4afb7ed4482b7b64c8a2261b6 not stripped,12904,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1b,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=a194c8d466d75bd2a86f6d6521bd9ffd7c11e4 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.vscode/ipch/70d84c3ff5d5e8f0/p1.ipch,data,2613248,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.vscode/ipch/70d84c3ff5d5e8f0/mmap_address.bin,data,8,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 5/p1b.c,C source ASCII text,1171,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.p1b.c.swp,Vim swap file version 8. pid 286 user jbrandao99 host jbrandao-VirtualBox file ~jbrandao99/Documentos/Aulas Pr\33\241ticas/Aula 5/p1b.c modified,12288,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=128341ed43a7f6cb3edd66fb749348f68b834 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1.c,C source ASCII text,1064,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c.c,C source ASCII text,1279,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=92c49df75e4afb7ed4482b7b64c8a2261b6 not stripped,12904,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1b,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=a194c8d466d75bd2a86f6d6521bd9ffd7c11e4 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.vscode/ipch/1e5e3eb029d2f947/mmap_address.bin,data,8,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.vscode/ipch/1e5e3eb029d2f947/p1c.ipch,data,2744320,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 5/p1b.c,C source ASCII text,1171,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.p1b.c.swp,Vim swap file version 8. pid 286 user jbrandao99 host jbrandao-VirtualBox file ~jbrandao99/Documentos/Aulas Pr\33\241ticas/Aula 5/p1b.c modified,12288,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=128341ed43a7f6cb3edd66fb749348f68b834 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1.c,C source ASCII text,1064,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c.c,C source ASCII text,1279,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=92c49df75e4afb7ed4482b7b64c8a2261b6 not stripped,12904,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1b,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=a194c8d466d75bd2a86f6d6521bd9ffd7c11e4 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 5/p1b.c,C source ASCII text,1171,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.p1b.c.swp,Vim swap file version 8. pid 286 user jbrandao99 host jbrandao-VirtualBox file ~jbrandao99/Documentos/Aulas Pr\33\241ticas/Aula 5/p1b.c modified,12288,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=128341ed43a7f6cb3edd66fb749348f68b834 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1.c,C source ASCII text,1064,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c.c,C source ASCII text,1279,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=92c49df75e4afb7ed4482b7b64c8a2261b6 not stripped,12904,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1b,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=a194c8d466d75bd2a86f6d6521bd9ffd7c11e4 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 5/p1b.c,C source ASCII text,1171,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.p1b.c.swp,Vim swap file version 8. pid 286 user jbrandao99 host jbrandao-VirtualBox file ~jbrandao99/Documentos/Aulas Pr\33\241ticas/Aula 5/p1b.c modified,12288,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=128341ed43a7f6cb3edd66fb749348f68b834 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1.c,C source ASCII text,1064,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c.c,C source ASCII text,1279,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1c,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=92c49df75e4afb7ed4482b7b64c8a2261b6 not stripped,12904,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/p1b,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=a194c8d466d75bd2a86f6d6521bd9ffd7c11e4 not stripped,8728,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 5/.swp,Vim swap file version 8. pid 2756 user jbrandao99 host jbrandao-VirtualBox modified,12288,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 2/p2a.c,C source ASCII text,56,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 2/p1,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=c2fb93f5ec47c76a5bd13d26c8a68cb63349 not stripped,8528,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 2/p1.c,C source ASCII text,792,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 1/p4a.c,C source ASCII text,199,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p4a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=beabdf84dc56ec1f1daab16198c4d1b8d98a8 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p5a.c,C source UTF-8 Unicode text,235,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p5a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=d95cf147a2b25ac831b6df3b165cedafec23 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/.vscode/ipch/ce951e58868c19e5/p5a.ipch,data,1957888,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/.vscode/ipch/ce951e58868c19e5/mmap_address.bin,data,8,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 1/p4a.c,C source ASCII text,199,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p4a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=beabdf84dc56ec1f1daab16198c4d1b8d98a8 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p5a.c,C source UTF-8 Unicode text,235,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p5a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=d95cf147a2b25ac831b6df3b165cedafec23 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/.vscode/ipch/6ad452517499e660/p4a.ipch,data,1957888,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/.vscode/ipch/6ad452517499e660/mmap_address.bin,data,8,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 1/p4a.c,C source ASCII text,199,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p4a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=beabdf84dc56ec1f1daab16198c4d1b8d98a8 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p5a.c,C source UTF-8 Unicode text,235,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p5a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=d95cf147a2b25ac831b6df3b165cedafec23 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 1/p4a.c,C source ASCII text,199,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p4a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=beabdf84dc56ec1f1daab16198c4d1b8d98a8 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p5a.c,C source UTF-8 Unicode text,235,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p5a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=d95cf147a2b25ac831b6df3b165cedafec23 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
+cenas/Aula 1/p4a.c,C source ASCII text,199,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p4a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=beabdf84dc56ec1f1daab16198c4d1b8d98a8 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p5a.c,C source UTF-8 Unicode text,235,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/p5a,ELF 64-bit LSB shared object x86-64 version 1 (SYSV) dynamically linked interpreter /lib64/l for GNU/Linux 3.2. BuildID[sha1]=d95cf147a2b25ac831b6df3b165cedafec23 not stripped,8344,rwx2019-04-04T20:05:59,2019-04-04T17:57:11
+cenas/Aula 1/Prob_01.pdf,PDF document version 1.5,151631,rw,2019-04-04T20:05:59,2019-04-04T17:57:11
+
+0
