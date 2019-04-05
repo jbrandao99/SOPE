@@ -10,31 +10,20 @@
 #include <dirent.h>
 #include <getopt.h>
 #include <signal.h>
-static int timeout = 0;
+
 char *filetype(char *argv, char *funcao);
 void WriteOnFile(int argc, char *argv, char* hash,char* out);
 void WriteOnSTDOUT(int argc, char *argv, char* hash);
 void getDirectory(char *argv);
 void isDirectory(char *argv);
-void writeecra(int argc,char *argv);
+void writeecra(char *argv);
 static void sigint_handler(int sig);
 
 
 static void sigint_handler(int sig) {
-  char answer;
 
   signal(sig, SIG_IGN);
-
-  printf(
-    "\n\nDo you want to stop all client processes? (Y to confirm, any other key to continue)\n"
-  );
-
-  scanf("%c%*[^\n]%*c", &answer);
-
-  if (answer == 'y' || answer == 'Y') {
-    printf("Time's up!\n");
-    timeout = 1;
-  } else printf("Resuming...\n");
+  printf("Processo fechado!\n");
 }
 
 char *filetype(char *argv, char *funcao)
@@ -120,7 +109,7 @@ void WriteOnFile(int argc, char *argv, char* hash, char* out)
 }
 
 
-void writeecra(int argc,char *argv)
+void writeecra(char *argv)
 {
   struct stat buf;
   char *type;
@@ -152,26 +141,26 @@ void WriteOnSTDOUT(int argc, char *argv, char* hash)
     if (argc > 0)
     {
         if(strcmp(hash,"") == 0)
-        {   writeecra(argc,argv);
+        {   writeecra(argv);
             printf("%s\n", hash);
             return;
         }
         else if(strcmp(hash,"md5") == 0)
-        {   writeecra(argc,argv);
+        {   writeecra(argv);
             printf(",");
             hash_md5 = filetype(argv, "md5sum");
             printf("%s\n", hash_md5);
             return;
         }
         else if(strcmp(hash,"sha1") == 0)
-        {   writeecra(argc,argv);
+        {   writeecra(argv);
             printf(",");
             hash_sha1 = filetype(argv, "sha1sum");
             printf("%s\n", hash_sha1);
             return;
         }
         else if(strcmp(hash,"sha256") == 0)
-        {   writeecra(argc,argv);
+        {   writeecra(argv);
             printf(",");
             hash_sha256 = filetype(argv, "sha256sum");
             printf("%s\n", hash_sha256);
@@ -179,6 +168,7 @@ void WriteOnSTDOUT(int argc, char *argv, char* hash)
         }
         else if(strcmp(hash,"md5,sha1") == 0)
         {
+            writeecra(argv);
             printf(",");
             hash_md5 = filetype(argv, "md5sum");
             printf("%s,", hash_md5);
@@ -187,7 +177,7 @@ void WriteOnSTDOUT(int argc, char *argv, char* hash)
             return;
         }
         else if(strcmp(hash,"md5,sha256") == 0)
-        {   writeecra(argc,argv);
+        {   writeecra(argv);
             printf(",");
             hash_md5 = filetype(argv, "md5sum");
             printf("%s,", hash_md5);
@@ -197,7 +187,7 @@ void WriteOnSTDOUT(int argc, char *argv, char* hash)
         }
         else if(strcmp(hash,"sha1,sha256") == 0)
         {
-            writeecra(argc,argv);
+            writeecra(argv);
             printf(",");
             hash_sha1 = filetype(argv, "sha1sum");
             printf("%s,", hash_sha1);
@@ -207,7 +197,7 @@ void WriteOnSTDOUT(int argc, char *argv, char* hash)
         }
         else if(strcmp(hash,"md5,sha1,sha256") == 0)
         {
-          writeecra(argc,argv);
+          writeecra(argv);
           printf(",");
           hash_md5 = filetype(argv, "md5sum");
           printf("%s,", hash_md5);
