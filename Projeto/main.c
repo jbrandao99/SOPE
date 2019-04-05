@@ -9,12 +9,33 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <getopt.h>
-
+#include <signal.h>
+static int timeout = 0;
 char *filetype(char *argv, char *funcao);
 void WriteOnFile(int argc, char *argv, char* hash,char* out);
 void WriteOnSTDOUT(int argc, char *argv, char* hash);
 void getDirectory(char *argv);
 void isDirectory(char *argv);
+void writeecra(int argc,char *argv);
+static void sigint_handler(int sig);
+
+
+static void sigint_handler(int sig) {
+  char answer;
+
+  signal(sig, SIG_IGN);
+
+  printf(
+    "\n\nDo you want to stop all client processes? (Y to confirm, any other key to continue)\n"
+  );
+
+  scanf("%c%*[^\n]%*c", &answer);
+
+  if (answer == 'y' || answer == 'Y') {
+    printf("Time's up!\n");
+    timeout = 1;
+  } else printf("Resuming...\n");
+}
 
 char *filetype(char *argv, char *funcao)
 {
@@ -98,52 +119,59 @@ void WriteOnFile(int argc, char *argv, char* hash, char* out)
     close(fd);
 }
 
+
+void writeecra(int argc,char *argv)
+{
+  struct stat buf;
+  char *type;
+  char tm[20]; //time modified
+  char tc[20]; //time created
+  stat(argv, &buf);
+  strftime(tm, 20, "%Y-%m-%dT%H:%M:%S", localtime(&(buf.st_mtime)));
+  strftime(tc, 20, "%Y-%m-%dT%H:%M:%S", localtime(&(buf.st_ctime)));
+
+  printf("%s,", argv);
+  type = filetype(argv, "file");
+  printf("%s,", type);
+  printf("%ld,", buf.st_size);
+  printf((buf.st_mode & S_IRUSR) ? "r" : "");
+  printf((buf.st_mode & S_IWUSR) ? "w" : "");
+  printf((buf.st_mode & S_IXUSR) ? "x" : ",");
+  printf("%s,", tc);
+  printf("%s", tm);
+}
+
+
+
 void WriteOnSTDOUT(int argc, char *argv, char* hash)
 {
-    struct stat buf;
-    char tm[20]; //time modified
-    char tc[20]; //time created
-    char *type;
     char *hash_sha1;
     char *hash_sha256;
     char *hash_md5;
 
     if (argc > 0)
     {
-        stat(argv, &buf);
-        strftime(tm, 20, "%Y-%m-%dT%H:%M:%S", localtime(&(buf.st_mtime)));
-        strftime(tc, 20, "%Y-%m-%dT%H:%M:%S", localtime(&(buf.st_ctime)));
-
-        printf("%s,", argv);
-        type = filetype(argv, "file");
-        printf("%s,", type);
-        printf("%ld,", buf.st_size);
-        printf((buf.st_mode & S_IRUSR) ? "r" : "");
-        printf((buf.st_mode & S_IWUSR) ? "w" : "");
-        printf((buf.st_mode & S_IXUSR) ? "x" : ",");
-        printf("%s,", tc);
-        printf("%s", tm);
         if(strcmp(hash,"") == 0)
-        {
+        {   writeecra(argc,argv);
             printf("%s\n", hash);
             return;
         }
         else if(strcmp(hash,"md5") == 0)
-        {
+        {   writeecra(argc,argv);
             printf(",");
             hash_md5 = filetype(argv, "md5sum");
             printf("%s\n", hash_md5);
             return;
         }
         else if(strcmp(hash,"sha1") == 0)
-        {
+        {   writeecra(argc,argv);
             printf(",");
             hash_sha1 = filetype(argv, "sha1sum");
             printf("%s\n", hash_sha1);
             return;
         }
         else if(strcmp(hash,"sha256") == 0)
-        {
+        {   writeecra(argc,argv);
             printf(",");
             hash_sha256 = filetype(argv, "sha256sum");
             printf("%s\n", hash_sha256);
@@ -159,7 +187,7 @@ void WriteOnSTDOUT(int argc, char *argv, char* hash)
             return;
         }
         else if(strcmp(hash,"md5,sha256") == 0)
-        {
+        {   writeecra(argc,argv);
             printf(",");
             hash_md5 = filetype(argv, "md5sum");
             printf("%s,", hash_md5);
@@ -169,6 +197,7 @@ void WriteOnSTDOUT(int argc, char *argv, char* hash)
         }
         else if(strcmp(hash,"sha1,sha256") == 0)
         {
+            writeecra(argc,argv);
             printf(",");
             hash_sha1 = filetype(argv, "sha1sum");
             printf("%s,", hash_sha1);
@@ -176,16 +205,22 @@ void WriteOnSTDOUT(int argc, char *argv, char* hash)
             printf("%s\n", hash_sha256);
             return;
         }
+        else if(strcmp(hash,"md5,sha1,sha256") == 0)
+        {
+          writeecra(argc,argv);
+          printf(",");
+          hash_md5 = filetype(argv, "md5sum");
+          printf("%s,", hash_md5);
+          hash_sha1 = filetype(argv, "sha1sum");
+          printf("%s,", hash_sha1);
+          hash_sha256 = filetype(argv, "sha256sum");
+          printf("%s\n", hash_sha256);
+          return;
+        }
         else
         {
-            printf(",");
-            hash_md5 = filetype(argv, "md5sum");
-            printf("%s,", hash_md5);
-            hash_sha1 = filetype(argv, "sha1sum");
-            printf("%s,", hash_sha1);
-            hash_sha256 = filetype(argv, "sha256sum");
-            printf("%s\n", hash_sha256);
-            return;
+        perror("Wrong arguments!");
+          return;
         }
     }
     else
@@ -257,6 +292,16 @@ void getDirectory(char *argv)
 
 int main(int argc, char *argv[])
 {
+  struct sigaction sa;
+  sa.sa_handler = sigint_handler;
+  sa.sa_flags = 0;
+  sigemptyset(&sa.sa_mask);
+  if (sigaction(SIGINT, &sa, NULL) == -1) {
+   printf("Unable to install handler\n");
+   return -6;
+ }
+
+
     if (argc == 2)
     {
         WriteOnSTDOUT(2,argv[1],"");
@@ -270,7 +315,7 @@ int main(int argc, char *argv[])
         {
             WriteOnSTDOUT(4,argv[3],argv[2]);
         }
-        else if (strcmp(argv[1],"-o") == 0) 
+        else if (strcmp(argv[1],"-o") == 0)
         {
             WriteOnFile(4,argv[3],"",argv[2]);
         }
@@ -278,14 +323,14 @@ int main(int argc, char *argv[])
         {
             exit(1);
         }
-        
-        
+
+
     }
     else
     {
         perror("ERROR!");
     }
-    
+
     return 0;
 
 }
