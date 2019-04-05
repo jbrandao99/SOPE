@@ -18,6 +18,23 @@ void getDirectory(char *argv);
 void isDirectory(char *argv);
 void writeecra(char *argv);
 void sigint_handler();
+void handler(int sig);
+
+void handler(int sig)
+{
+    if (sig == SIGUSR1)
+    {
+        printf("Recebido sinal SIGUSR1!\n");
+    }
+    else if (sig == SIGUSR2)
+    {
+        printf("Recebido sinal SIGUSR2!\n");
+    }
+    else
+    {
+        perror("Recebido erro de sinal!\n");
+    }
+}
 
 void sigint_handler()
 {
@@ -306,7 +323,26 @@ int main(int argc, char *argv[])
         }
         else if (strcmp(argv[1], "-o") == 0)
         {
-            WriteOnFile(4, argv[3], "", argv[2]);
+            int s1 = 0;
+            int s2 = 0;
+            char *type = filetype(argv[3], "file");
+            if (strcmp("directory", type) == 0)
+            {
+                getDirectory(argv[3]);
+                if (signal(SIGUSR1, handler) != SIG_ERR)
+                {
+                    s1++;
+                }
+            }
+            else
+            {
+                WriteOnFile(4, argv[3], "", argv[2]);
+                if (signal(SIGUSR2, handler) != SIG_ERR)
+                {
+                    s2++;
+                }
+            }
+            printf("New directory: %d/%d directories/files at this time.\n", s1, s2);
         }
         else
         {
