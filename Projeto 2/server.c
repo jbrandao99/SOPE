@@ -8,6 +8,8 @@
 
 bank_account_t bank_accounts[MAX_BANK_ACCOUNTS];
 int num_accounts;
+int num_bancos;
+int num_password;
 
 bool login(uint32_t id, char* pass)
 {
@@ -55,3 +57,17 @@ void destroyServerFIFO()
         }
 }
 
+void verifyArgs(char *args[]){
+
+    num_bancos = atoi(args[1]);
+    if(num_bancos>MAX_BANK_OFFICES||num_bancos<=0)
+    {
+        printf("Numero de balcoes eletronicos invalido %d\n",MAX_BANK_OFFICES);
+        exit(1);
+    }
+    num_password= strlen(argv[2]);    //Tamanho da pass
+    if(num_password < MIN_PASSWORD_LEN || num_password > MAX_PASSWORD_LEN){
+        printf("Password invalida, tente com %d a %d caracteres\n", MIN_PASSWORD_LEN, MAX_PASSWORD_LEN);
+        exit(1);
+    }
+}
