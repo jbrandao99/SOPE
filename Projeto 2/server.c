@@ -71,7 +71,6 @@ void openServerFIFO()
         printf("FIFO %s openned in WRITEONLY mode\n", SERVER_FIFO_PATH);
     }
 }
-void verifyArgs(char *args[]){
 
 void closeServerFIFO()
 {
@@ -98,11 +97,9 @@ int balance(uint32_t id)
     return bank_account.balance;
 }
 
+void verifyArgs(char *argv[]){
 
-
-
-
-    num_bancos = atoi(args[1]);
+    num_bancos = atoi(argv[1]);
     if(num_bancos>MAX_BANK_OFFICES||num_bancos<=0)
     {
         printf("Numero de balcoes eletronicos invalido %d\n",MAX_BANK_OFFICES);
