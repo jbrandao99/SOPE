@@ -9,6 +9,8 @@
 int num_password;
 int num_accounts;
 
+
+//FAZ NA MAIN POR ISSO E QUE TEM ARGV
 void verifyArgs(char *args[]){
 
     num_password= strlen(argv[2]);    //Tamanho da pass
