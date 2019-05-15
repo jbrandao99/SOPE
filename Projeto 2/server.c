@@ -7,14 +7,16 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
+#include <pthread.h>
 
 bank_account_t bank_accounts[MAX_BANK_ACCOUNTS];
 int num_accounts = 0;
 int fd, fd_dummy;
-int num_bancos;
-int num_password;
+int num_banks;
 static const char characters[] = "0123456789abcdef";
 
+//NS SE SE VAI USAR
 bool login(uint32_t id, char *pass)
 {
     for (unsigned int i = 0; i < num_accounts; i++)
@@ -99,21 +101,30 @@ int balance(uint32_t id)
     return bank_account.balance;
 }
 
-void verifyArgs(char *argv[])
+void verifyArgs(int argc, char *argv[])
 {
+    if (argc != 3)
+    {
+        printf("Wrong number of arguments\n");
+        exit(EXIT_FAILURE);
+    }
 
-    num_bancos = atoi(argv[1]);
-    if (num_bancos > MAX_BANK_OFFICES || num_bancos <= 0)
+    num_banks = atoi(argv[1]);
+    if (num_banks > MAX_BANK_OFFICES || num_banks <= 0)
     {
-        printf("Numero de balcoes eletronicos invalido %d\n", MAX_BANK_OFFICES);
-        exit(1);
+        printf("Invalid Number of Eletronic Counters: %d\n", MAX_BANK_OFFICES);
+        exit(EXIT_FAILURE);
     }
-    num_password = strlen(argv[2]); //Tamanho da pass
-    if (num_password < MIN_PASSWORD_LEN || num_password > MAX_PASSWORD_LEN)
+
+    char size_pass[MAX_PASSWORD_LEN + 1];
+    strcpy(size_pass, argv[2]);
+    if (strlen(size_pass) < MIN_PASSWORD_LEN || strlen(size_pass) > MAX_PASSWORD_LEN)
     {
-        printf("Password invalida, tente com %d a %d caracteres\n", MIN_PASSWORD_LEN, MAX_PASSWORD_LEN);
-        exit(1);
+        printf("Invalid Password. Must have more than %d and less than %d characters\n", MIN_PASSWORD_LEN, MAX_PASSWORD_LEN);
+        exit(EXIT_FAILURE);
     }
+
+    size_pass[strlen(size_pass)] = '\0';
 }
 
 char *getHash(char *password, char *salt)
@@ -240,4 +251,21 @@ bank_account_t *getAccount(uint32_t id)
         }
     }
     return bank_account;
+}
+
+int main(int argc, char *argv[])
+{
+    verifyArgs(argc, argv);
+
+    srand(time(NULL));
+
+    createServerFIFO();
+
+    openServerFIFO();
+
+    closeServerFIFO();
+
+    destroyServerFIFO();
+
+    return 0;
 }
