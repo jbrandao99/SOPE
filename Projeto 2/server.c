@@ -12,12 +12,13 @@ int num_accounts;
 int fd, fd_dummy;
 int num_bancos;
 int num_password;
+static const char characters[] = "0123456789abcdef";
 
-bool login(uint32_t id, char* pass)
+bool login(uint32_t id, char *pass)
 {
-    for(unsigned int i = 0; i < num_accounts; i++)
+    for (unsigned int i = 0; i < num_accounts; i++)
     {
-        if(bank_accounts[i].account_id == id)
+        if (bank_accounts[i].account_id == id)
         {
             //falta password (hash)
             return true;
@@ -28,9 +29,9 @@ bool login(uint32_t id, char* pass)
 
 void createServerFIFO()
 {
-    if(mkfifo(SERVER_FIFO_PATH, 0660) < 0)
+    if (mkfifo(SERVER_FIFO_PATH, 0660) < 0)
     {
-        if(errno == EEXIST)
+        if (errno == EEXIST)
         {
             printf("FIFO %s alreay exists\n", SERVER_FIFO_PATH);
         }
@@ -48,25 +49,25 @@ void createServerFIFO()
 
 void destroyServerFIFO()
 {
-    if(unlink(SERVER_FIFO_PATH) < 0)
-        {
-            printf("Error when destroying FIFO %s\n",SERVER_FIFO_PATH);
-        }
-        else
-        {
-            printf("FIFO %s has been destroyed\n", SERVER_FIFO_PATH);
-            exit(EXIT_SUCCESS);
-        }
+    if (unlink(SERVER_FIFO_PATH) < 0)
+    {
+        printf("Error when destroying FIFO %s\n", SERVER_FIFO_PATH);
+    }
+    else
+    {
+        printf("FIFO %s has been destroyed\n", SERVER_FIFO_PATH);
+        exit(EXIT_SUCCESS);
+    }
 }
 
 void openServerFIFO()
 {
-    if((fd = open(SERVER_FIFO_PATH, O_RDONLY)) != -1)
+    if ((fd = open(SERVER_FIFO_PATH, O_RDONLY)) != -1)
     {
         printf("FIFO %s openned in READONLY mode\n", SERVER_FIFO_PATH);
     }
-    
-    if((fd_dummy = open(SERVER_FIFO_PATH, O_WRONLY)) != -1)
+
+    if ((fd_dummy = open(SERVER_FIFO_PATH, O_WRONLY)) != -1)
     {
         printf("FIFO %s openned in WRITEONLY mode\n", SERVER_FIFO_PATH);
     }
@@ -80,7 +81,7 @@ void closeServerFIFO()
 
 void shutdown()
 {
-    chmod(SERVER_FIFO_PATH, S_IRUSR|S_IRGRP|S_IROTH);
+    chmod(SERVER_FIFO_PATH, S_IRUSR | S_IRGRP | S_IROTH);
 }
 
 int balance(uint32_t id)
@@ -88,7 +89,7 @@ int balance(uint32_t id)
     bank_account_t bank_account;
     for (unsigned int i = 0; i < num_accounts; i++)
     {
-        if(bank_accounts[i].account_id == id)
+        if (bank_accounts[i].account_id == id)
         {
             bank_account = bank_accounts[i];
             break;
@@ -97,17 +98,33 @@ int balance(uint32_t id)
     return bank_account.balance;
 }
 
-void verifyArgs(char *argv[]){
+void verifyArgs(char *argv[])
+{
 
     num_bancos = atoi(argv[1]);
-    if(num_bancos>MAX_BANK_OFFICES||num_bancos<=0)
+    if (num_bancos > MAX_BANK_OFFICES || num_bancos <= 0)
     {
-        printf("Numero de balcoes eletronicos invalido %d\n",MAX_BANK_OFFICES);
+        printf("Numero de balcoes eletronicos invalido %d\n", MAX_BANK_OFFICES);
         exit(1);
     }
-    num_password= strlen(argv[2]);    //Tamanho da pass
-    if(num_password < MIN_PASSWORD_LEN || num_password > MAX_PASSWORD_LEN){
+    num_password = strlen(argv[2]); //Tamanho da pass
+    if (num_password < MIN_PASSWORD_LEN || num_password > MAX_PASSWORD_LEN)
+    {
         printf("Password invalida, tente com %d a %d caracteres\n", MIN_PASSWORD_LEN, MAX_PASSWORD_LEN);
         exit(1);
     }
+}
+
+//create salt char array in main to put as argument
+char *getSalt(char *salt)
+{
+    unsigned int i;
+    for (i = 0; i < SALT_LEN; i++)
+    {
+        int n = rand() % (int)(sizeof(characters) - 1);
+        salt[i] = characters[n];
+    }
+    salt[i] = '\0';
+
+    return salt;
 }
