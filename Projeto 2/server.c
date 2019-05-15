@@ -28,22 +28,30 @@ void createServerFIFO()
     {
         if(errno == EEXIST)
         {
-        printf("FIFO %s alreay exists\n", SERVER_FIFO_PATH);
+            printf("FIFO %s alreay exists\n", SERVER_FIFO_PATH);
         }
         else
         {
             printf("Can't create FIFO\n");
+            exit(EXIT_FAILURE);
         }
-        
-        if(unlink(SERVER_FIFO_PATH) < 0)
+    }
+    else
+    {
+        printf("FIFO %s successfully created\n", SERVER_FIFO_PATH);
+    }
+}
+
+void destroyServerFIFO()
+{
+    if(unlink(SERVER_FIFO_PATH) < 0)
         {
             printf("Error when destroying FIFO %s\n",SERVER_FIFO_PATH);
         }
         else
         {
             printf("FIFO %s has been destroyed\n", SERVER_FIFO_PATH);
+            exit(EXIT_SUCCESS);
         }
-        exit(0);
-    }
 }
 
