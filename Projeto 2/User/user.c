@@ -7,117 +7,104 @@
 #include <unistd.h>
 #include <string.h>
 
-int num_password;
 int num_accounts;
 int num_delay;
-int num_operacao;
+int op_number;
 req_header_t user;
 req_value_t value;
 
+void verifyArgs(int argc, char *argv[])
+{
 
-//FAZ NA MAIN POR ISSO E QUE TEM ARGV
-void verifyArgs(char *args[]){
+  if (argc != 6)
+  {
+    printf("Wrong number of arguments\n");
+    exit(EXIT_FAILURE);
+  }
 
-   num_accounts=atoi(args[1]);
-   if(num_accounts>MAX_BANK_ACCOUNTS || num_accounts<1)
-   {
-     printf("Numero invalido de conta %d\n",MAX_BANK_ACCOUNTS);
-     exit(1);
-   }
+  num_accounts = atoi(argv[1]);
+  if (num_accounts > MAX_BANK_ACCOUNTS || num_accounts < 0)
+  {
+    printf("Invalid Number of Accounts: %d\n", MAX_BANK_ACCOUNTS);
+    exit(EXIT_FAILURE);
+  }
 
-    num_password= strlen(args[2]);    //Tamanho da pass
-    if(num_password < MIN_PASSWORD_LEN || num_password > MAX_PASSWORD_LEN){
-        printf("Password invalida, tente com %d a %d caracteres\n", MIN_PASSWORD_LEN, MAX_PASSWORD_LEN);
-        exit(1);
-    }
+  char size_pass[MAX_PASSWORD_LEN + 1];
+  strcpy(size_pass, argv[2]);
+  if (strlen(size_pass) < MIN_PASSWORD_LEN || strlen(size_pass) > MAX_PASSWORD_LEN)
+  {
+    printf("Invalid Password. Must have more than %d and less than %d characters\n", MIN_PASSWORD_LEN, MAX_PASSWORD_LEN);
+    exit(EXIT_FAILURE);
+  }
+  size_pass[strlen(size_pass)] = '\0';
 
-    num_delay = atoi(args[3]);
-    if(num_delay>MAX_OP_DELAY_MS || num_delay<1)
-    {
-      printf("Delay invalido %d\n", MAX_OP_DELAY_MS);
-      exit(1);
-    }
+  num_delay = atoi(argv[3]);
+  if (num_delay > MAX_OP_DELAY_MS || num_delay < 1)
+  {
+    printf("Invalid delay: %d\n", MAX_OP_DELAY_MS);
+    exit(EXIT_FAILURE);
+  }
 
-    num_operacao = atoi(args[4]);
-    if(num_operacao<0 || num_operacao>3)
-    {
-    printf("Codigo de operacao invalido %d\n",num_operacao);
-    exit(1);
-    }
-
+  op_number = atoi(argv[4]);
+  if (op_number < 0 || op_number > 3)
+  {
+    printf("Invalid Operation Code: %d\n", op_number);
+    exit(EXIT_FAILURE);
+  }
 }
 
-void sincronizeUser(char *args[])  //FALTA PID
+void sincronizeUser(char *args[]) //FALTA PID
 {
-  user.account_id= atoi(args[1]);
-  strcpy(user.password,args[2]);
-  user.op_delay_ms=atoi(args[3]);
-
+  user.account_id = atoi(args[1]);
+  strcpy(user.password, args[2]);
+  user.op_delay_ms = atoi(args[3]);
 }
 
 void adminAcess(int code)
 {
-  if(code==OP_CREATE_ACCOUNT)
+  if (code == OP_CREATE_ACCOUNT)
   {
     //
   }
-  if(code==OP_SHUTDOWN)
+  if (code == OP_SHUTDOWN)
   {
     //
   }
   else
   {
-    printf("Code only available to user acess %d\n",code);
+    printf("Code only available to user acess %d\n", code);
     exit(1);
   }
-
-
 }
 
 void userAcess(int code)
 {
-  if(code==OP_BALANCE)
+  if (code == OP_BALANCE)
   {
     //
   }
-  if(code==OP_TRANSFER)
+  if (code == OP_TRANSFER)
   {
     //
   }
   else
   {
-    printf("Code only available to client acess %d\n",code);
+    printf("Code only available to client acess %d\n", code);
     exit(1);
   }
-
-
 }
 
-
-
-
-int main(int argc, char *argv[]) {
-
-if(argc!=6)
+int main(int argc, char *argv[])
 {
-  exit(1);
-}
-verifyArgs(argv);
-sincronizeUser(argv);
-if(num_accounts==ADMIN_ACCOUNT_ID)
-{
-  adminAcess(num_operacao);
-}
-else
-{
-  userAcess(num_operacao);
-}
 
-
-
-
-
-
-
-
+  verifyArgs(argc, argv);
+  sincronizeUser(argv);
+  if (num_accounts == ADMIN_ACCOUNT_ID)
+  {
+    adminAcess(num_operacao);
+  }
+  else
+  {
+    userAcess(num_operacao);
+  }
 }

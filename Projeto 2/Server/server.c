@@ -14,6 +14,7 @@ bank_account_t bank_accounts[MAX_BANK_ACCOUNTS];
 unsigned int num_accounts = 0;
 int fd, fd_dummy;
 int num_banks;
+int slog;
 static const char characters[] = "0123456789abcdef";
 
 //NS SE SE VAI USAR
@@ -253,11 +254,33 @@ int transfer(uint32_t src_id, uint32_t dest_id, uint32_t amount)
     return RC_OK;
 }
 
+void openServerFile()
+{
+    slog = open(SERVER_LOGFILE, O_WRONLY|O_CREAT|O_EXCL, 0664);
+
+    if (slog == -1)
+    {
+        printf("Error opening server log file\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void closeServerFile()
+{
+    close(slog);
+}
+
 int main(int argc, char *argv[])
 {
     verifyArgs(argc, argv);
 
     srand(time(NULL));
+
+    createAccount(ADMIN_ACCOUNT_ID, 0, argv[2]);
+
+    logAccountCreation(STDOUT_FILENO, MAIN_THREAD_ID, &bank_accounts[ADMIN_ACCOUNT_ID]);
+
+    openServerFile();
 
     createServerFIFO();
 
@@ -266,6 +289,8 @@ int main(int argc, char *argv[])
     closeServerFIFO();
 
     destroyServerFIFO();
+
+    closeServerFile();
 
     return 0;
 }
