@@ -6,12 +6,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 
 int num_account;
 int num_delay;
 int op_number;
+int ulog;
 char size_pass[MAX_PASSWORD_LEN + 1];
 req_header_t req_header;
+req_value_t req_value;
+req_create_account_t req_create_account;
+req_transfer_t req_transfer;
 
 void verifyArgs(int argc, char *argv[])
 {
@@ -54,16 +59,68 @@ void verifyArgs(int argc, char *argv[])
 
 void sincronizeHeader()
 {
-    req_header.pid = getpid();
-    req_header.account_id = num_account;
-    strcpy(req_header.password, size_pass);
-    req_header.op_delay_ms = num_delay;
+  req_header.pid = getpid();
+  req_header.account_id = num_account;
+  strcpy(req_header.password, size_pass);
+  req_header.op_delay_ms = num_delay;
+}
+
+//Falta dados aqui
+void createAccount()
+{
+    req_value.header = req_header;
+    req_value.create = req_create_account;
+}
+
+//FALTA DADOS AQUI
+void transfer()
+{
+    req_value.header = req_header;
+    req_value.transfer = req_transfer;
+}
+
+void openUserFile()
+{
+    ulog = open(USER_LOGFILE, O_WRONLY| O_CREAT| O_APPEND, 0664);
+
+    if (ulog == -1)
+    {
+        printf("Error opening user log file\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void closeServerFile()
+{
+    close(ulog);
+}
+
+void operation()
+{
+  switch (op_number)
+  {
+  case (OP_CREATE_ACCOUNT):
+    createAccount();
+    break;
+  case (OP_BALANCE):
+    req_value.header = req_header;
+    break;
+  case (OP_TRANSFER):
+    transfer();
+    break;
+  case (OP_SHUTDOWN):
+    req_value.header = req_header;
+    break;
+  }
 }
 
 int main(int argc, char *argv[])
 {
-
   verifyArgs(argc, argv);
 
   sincronizeHeader();
+
+  operation();
+
+  return 0;
 }
