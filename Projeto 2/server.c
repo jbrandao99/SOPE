@@ -11,13 +11,13 @@
 #include <pthread.h>
 
 bank_account_t bank_accounts[MAX_BANK_ACCOUNTS];
-int num_accounts = 0;
+unsigned int num_accounts = 0;
 int fd, fd_dummy;
 int num_banks;
 static const char characters[] = "0123456789abcdef";
 
 //NS SE SE VAI USAR
-bool login(uint32_t id, char *pass)
+/* bool login(uint32_t id, char *pass)
 {
     for (unsigned int i = 0; i < num_accounts; i++)
     {
@@ -28,7 +28,7 @@ bool login(uint32_t id, char *pass)
         }
     }
     return false;
-}
+} */
 
 void createServerFIFO()
 {
@@ -163,6 +163,24 @@ char *getSalt()
     return salt;
 }
 
+bool isAccount(uint32_t id)
+{
+    for (unsigned int i = 0; i < num_accounts; i++)
+    {
+        if (bank_accounts[i].account_id == id)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void addAccount(bank_account_t bank_account)
+{
+    bank_accounts[num_accounts] = bank_account;
+    num_accounts++;
+}
+
 int createAccount(uint32_t id, uint32_t balance, char *password)
 {
     bank_account_t bank_account;
@@ -182,22 +200,20 @@ int createAccount(uint32_t id, uint32_t balance, char *password)
     return RC_OK;
 }
 
-void addAccount(bank_account_t bank_account)
+bank_account_t *getAccount(uint32_t id)
 {
-    bank_accounts[num_accounts] = bank_account;
-    num_accounts++;
-}
+    bank_account_t *bank_account = (bank_account_t *)malloc(sizeof(bank_account_t));
+    bank_account = NULL;
 
-bool isAccount(uint32_t id)
-{
     for (unsigned int i = 0; i < num_accounts; i++)
     {
         if (bank_accounts[i].account_id == id)
         {
-            return true;
+            bank_account = &bank_accounts[i];
+            break;
         }
     }
-    return false;
+    return bank_account;
 }
 
 int transfer(uint32_t src_id, uint32_t dest_id, uint32_t amount)
@@ -235,22 +251,6 @@ int transfer(uint32_t src_id, uint32_t dest_id, uint32_t amount)
     dest_account->balance += amount;
 
     return RC_OK;
-}
-
-bank_account_t *getAccount(uint32_t id)
-{
-    bank_account_t *bank_account = (bank_account_t *)malloc(sizeof(bank_account_t));
-    bank_account = NULL;
-
-    for (unsigned int i = 0; i < num_accounts; i++)
-    {
-        if (bank_accounts[i].account_id == id)
-        {
-            bank_account = &bank_accounts[i];
-            break;
-        }
-    }
-    return bank_account;
 }
 
 int main(int argc, char *argv[])
