@@ -13,10 +13,13 @@ int num_delay;
 int op_number;
 int ulog;
 char size_pass[MAX_PASSWORD_LEN + 1];
+char args[3][1000];
+
 req_header_t req_header;
 req_value_t req_value;
 req_create_account_t req_create_account;
 req_transfer_t req_transfer;
+tlv_request_t message;
 
 void verifyArgs(int argc, char *argv[])
 {
@@ -65,34 +68,86 @@ void sincronizeHeader()
   req_header.op_delay_ms = num_delay;
 }
 
-//Falta dados aqui
-void createAccount()
+bool checkArgs(int op)
 {
-    req_value.header = req_header;
-    req_value.create = req_create_account;
+  if (atoi(args[0]) < 1 || atoi(args[0]) > MAX_BANK_ACCOUNTS)
+  {
+    printf("Invalid Account ID!\n");
+    return false;
+  }
+  else if (atoi(args[1]) < MIN_BALANCE || atoi(args[1]) > MAX_BALANCE)
+  {
+    printf("Invalid account balance!\n");
+    return false;
+  }
+
+  if (op == OP_CREATE_ACCOUNT)
+  {
+    if (strlen(args[2]) < MIN_PASSWORD_LEN || strlen(args[2]) > MAX_PASSWORD_LEN)
+    {
+      printf("Invalid Password!\n");
+      return false;
+    }
+  }
+
+  return true;
 }
 
-//FALTA DADOS AQUI
+void createAccount()
+{
+  if (!checkArgs(OP_CREATE_ACCOUNT))
+  {
+    exit(EXIT_FAILURE);
+  }
+
+  req_value.header = req_header;
+  req_create_account.account_id = atoi(args[0]);
+  req_create_account.balance = atoi(args[1]);
+  strcpy(req_create_account.password, args[2]);
+  req_value.create = req_create_account;
+}
+
 void transfer()
 {
-    req_value.header = req_header;
-    req_value.transfer = req_transfer;
+  if (!checkArgs(OP_TRANSFER))
+  {
+    exit(EXIT_FAILURE);
+  }
+
+  req_value.header = req_header;
+  req_transfer.account_id = atoi(args[0]);
+  req_transfer.amount = atoi(args[1]);
+  req_value.transfer = req_transfer;
 }
 
 void openUserFile()
 {
-    ulog = open(USER_LOGFILE, O_WRONLY| O_CREAT| O_APPEND, 0664);
+  ulog = open(USER_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0664);
 
-    if (ulog == -1)
-    {
-        printf("Error opening user log file\n");
-        exit(EXIT_FAILURE);
-    }
+  if (ulog == -1)
+  {
+    printf("Error opening user log file\n");
+    exit(EXIT_FAILURE);
+  }
 }
 
 void closeServerFile()
 {
-    close(ulog);
+  close(ulog);
+}
+
+void setArgs(char arg5)
+{
+  char fifthArg[1000];
+  memcpy(fifthArg, arg5, strlen(arg5) + 1);
+  char *token;
+  token = strtok(fifthArg, " ");
+
+  for (int i = 0; token != NULL; i++)
+  {
+    strcpy(args[i], token);
+    token = strtok(NULL, " ");
+  }
 }
 
 void operation()
@@ -114,13 +169,36 @@ void operation()
   }
 }
 
+void setMessage(int op)
+{
+  message.value = req_value;
+  message.type = op;
+  message.length = sizeof(message);
+}
+
+void sendMessage(){
+
+}
+
+void receiveMessage(){
+
+}
+
 int main(int argc, char *argv[])
 {
   verifyArgs(argc, argv);
 
   sincronizeHeader();
 
+  setArgs(argv[5]);
+
   operation();
+
+  setMessage(argv[4]);
+
+  sendMessage();
+
+  receiveMessage();
 
   return 0;
 }
