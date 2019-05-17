@@ -9,6 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 bank_account_t bank_accounts[MAX_BANK_ACCOUNTS];
 unsigned int num_accounts = 0;
@@ -16,6 +17,9 @@ int fd, fd_dummy;
 int num_banks;
 int slog;
 static const char characters[] = "0123456789abcdef";
+sem_t sem1, sem2;
+int val1, val2;
+pthread_t *balcao;
 
 //NS SE SE VAI USAR
 /* bool login(uint32_t id, char *pass)
@@ -270,21 +274,46 @@ void closeServerFile()
     close(slog);
 }
 
+void esperaBalcao()
+{
+    for (int i = 0; i < num_banks; i++)
+    {
+        pthread_join(balcao[i], NULL);
+    }  
+}
+
+void createSemaphore()
+{
+    sem_init(&sem1,0,num_banks);
+    sem_getvalue(&sem1,&val1);
+
+    //logSyncMechSem(STDOUT_FILENO, MAIN_THREAD_ID, SYNC_OP_SEM_INIT, SYNC_ROLE_PRODUCER, 0, val1);
+
+    sem_init(&sem2, 0, 0);
+    sem_getvalue(&sem2, &val2);
+    
+    //logSyncMechSem(STDOUT_FILENO, MAIN_THREAD_ID, SYNC_OP_SEM_INIT, SYNC_ROLE_PRODUCER, 0, val2);
+}
+
 int main(int argc, char *argv[])
 {
     verifyArgs(argc, argv);
 
     srand(time(NULL));
 
+    createSemaphore();
+
     createAccount(ADMIN_ACCOUNT_ID, 0, argv[2]);
 
-    logAccountCreation(STDOUT_FILENO, MAIN_THREAD_ID, &bank_accounts[ADMIN_ACCOUNT_ID]);
+    //logAccountCreation(STDOUT_FILENO, MAIN_THREAD_ID, &bank_accounts[ADMIN_ACCOUNT_ID]);
 
     openServerFile();
 
     createServerFIFO();
 
     openServerFIFO();
+
+    esperaBalcao();
 
     closeServerFIFO();
 

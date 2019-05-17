@@ -75,7 +75,7 @@ bool checkArgs(int op)
     printf("Invalid Account ID!\n");
     return false;
   }
-  else if (atoi(args[1]) < MIN_BALANCE || atoi(args[1]) > MAX_BALANCE)
+  else if (strtoul(args[1],NULL,10) < MIN_BALANCE || strtoul(args[1],NULL,10) > MAX_BALANCE)
   {
     printf("Invalid account balance!\n");
     return false;
@@ -136,7 +136,7 @@ void closeServerFile()
   close(ulog);
 }
 
-void setArgs(char arg5)
+void setArgs(char* arg5)
 {
   char fifthArg[1000];
   memcpy(fifthArg, arg5, strlen(arg5) + 1);
@@ -169,10 +169,10 @@ void operation()
   }
 }
 
-void setMessage(int op)
+void setMessage()
 {
   message.value = req_value;
-  message.type = op;
+  message.type = op_number;
   message.length = sizeof(message);
 }
 
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
 
   operation();
 
-  setMessage(argv[4]);
+  setMessage();
 
   sendMessage();
 
