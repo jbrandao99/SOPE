@@ -7,19 +7,22 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include "../log.c"
 
 int num_account;
 int num_delay;
 int op_number;
 int ulog;
 char size_pass[MAX_PASSWORD_LEN + 1];
-char args[3][1000];
+char args[3][512];
 
 req_header_t req_header;
 req_value_t req_value;
 req_create_account_t req_create_account;
 req_transfer_t req_transfer;
 tlv_request_t message;
+tlv_request_t *tlvPtr;
+
 
 void verifyArgs(int argc, char *argv[])
 {
@@ -75,7 +78,7 @@ bool checkArgs(int op)
     printf("Invalid Account ID!\n");
     return false;
   }
-  else if (strtoul(args[1],NULL,10) < MIN_BALANCE || strtoul(args[1],NULL,10) > MAX_BALANCE)
+  else if (strtoul(args[1], NULL, 10) < MIN_BALANCE || strtoul(args[1], NULL, 10) > MAX_BALANCE)
   {
     printf("Invalid account balance!\n");
     return false;
@@ -136,7 +139,7 @@ void closeServerFile()
   close(ulog);
 }
 
-void setArgs(char* arg5)
+void setArgs(char *arg5)
 {
   char fifthArg[1000];
   memcpy(fifthArg, arg5, strlen(arg5) + 1);
@@ -176,12 +179,77 @@ void setMessage()
   message.length = sizeof(message);
 }
 
-void sendMessage(){
+void sendMessage()
+{
+  message.length = sizeof(message);
+  size_t length;
+  char buffer[512];
 
+  if (message.type == OP_BALANCE || message.type == OP_SHUTDOWN)
+  {
+    length = snprintf(buffer, 512, "%d%d%d|%d|%s|%d|",
+                   message.type, message.length, message.value.header.pid,
+                   message.value.header.account_id, message.value.header.password,
+                   message.value.header.op_delay_ms);
+  }
+  else
+  {
+    if (message.type == OP_CREATE_ACCOUNT)
+    {
+      length = snprintf(buffer, 512, "%d%d%d|%d|%s|%d|%d|%d|%s",
+                     message.type, message.length, message.value.header.pid,
+                     message.value.header.account_id, message.value.header.password,
+                     message.value.header.op_delay_ms, message.value.create.account_id,
+                     message.value.create.balance, message.value.create.password);
+    }
+    else
+    {
+      length = snprintf(buffer, 512, "%d%d%d|%d|%s|%d|%d|%d",
+                     message.type, message.length, message.value.header.pid,
+                     message.value.header.account_id, message.value.header.password,
+                     message.value.header.op_delay_ms, message.value.transfer.account_id,
+                     message.value.transfer.amount);
+    }
+  }
+
+  message.length = length;
+  buffer[length] = '\0';
+  char *str = calloc(1, sizeof *str * length + 1);
+  strcpy(str, buffer);
+
+  int fd;
+  if ((fd = open(SERVER_FIFO_PATH, O_WRONLY | O_CREAT | O_APPEND, 0660)) < 0)
+  {
+    exit(EXIT_FAILURE);
+  }
+
+  int wri = write(fd, str, message.length);
+  if (wri < 0)
+  {
+    exit(EXIT_FAILURE);
+  }
+  close(fd);
+
+
+
+  int ulog = open(USER_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0664);
+  if (ulog < 0)
+  {
+    exit(EXIT_FAILURE);
+  }
+
+  tlvPtr = &message;
+  int savedStdout = dup(STDOUT_FILENO);
+  dup2(ulog, STDOUT_FILENO);
+
+  logRequest(fd, message.value.header.pid, tlvPtr);
+  close(ulog);
+  dup2(savedStdout, STDOUT_FILENO);
+  close(savedStdout);
 }
 
-void receiveMessage(){
-
+void receiveMessage()
+{
 }
 
 int main(int argc, char *argv[])
