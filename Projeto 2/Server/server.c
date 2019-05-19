@@ -290,7 +290,7 @@ int transfer(uint32_t src_id, uint32_t dest_id, uint32_t amount, uint32_t delay)
 
 void openServerFile()
 {
-    slog = open(SERVER_LOGFILE, O_WRONLY | O_CREAT | O_EXCL, 0664);
+    slog = open(SERVER_LOGFILE, O_WRONLY | O_TRUNC | O_CREAT, 0777);
 
     if (slog == -1)
     {
