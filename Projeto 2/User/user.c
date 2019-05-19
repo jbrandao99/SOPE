@@ -15,6 +15,7 @@ int op_number;
 int ulog;
 char size_pass[MAX_PASSWORD_LEN + 1];
 char args[3][512];
+char buffer[512];
 
 req_header_t req_header;
 req_value_t req_value;
@@ -22,7 +23,6 @@ req_create_account_t req_create_account;
 req_transfer_t req_transfer;
 tlv_request_t message;
 tlv_request_t *tlvPtr;
-
 
 void verifyArgs(int argc, char *argv[])
 {
@@ -123,22 +123,6 @@ void transfer()
   req_value.transfer = req_transfer;
 }
 
-void openUserFile()
-{
-  ulog = open(USER_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0664);
-
-  if (ulog == -1)
-  {
-    printf("Error opening user log file\n");
-    exit(EXIT_FAILURE);
-  }
-}
-
-void closeServerFile()
-{
-  close(ulog);
-}
-
 void setArgs(char *arg5)
 {
   char fifthArg[1000];
@@ -172,52 +156,51 @@ void operation()
   }
 }
 
-void setMessage()
+void setMessageDef()
 {
   message.value = req_value;
   message.type = op_number;
   message.length = sizeof(message);
 }
 
-void sendMessage()
+size_t setMessage()
 {
-  message.length = sizeof(message);
   size_t length;
-  char buffer[512];
 
   if (message.type == OP_BALANCE || message.type == OP_SHUTDOWN)
   {
     length = snprintf(buffer, 512, "%d%d%d|%d|%s|%d|",
-                   message.type, message.length, message.value.header.pid,
-                   message.value.header.account_id, message.value.header.password,
-                   message.value.header.op_delay_ms);
+                      message.type, message.length, message.value.header.pid,
+                      message.value.header.account_id, message.value.header.password,
+                      message.value.header.op_delay_ms);
   }
   else
   {
     if (message.type == OP_CREATE_ACCOUNT)
     {
       length = snprintf(buffer, 512, "%d%d%d|%d|%s|%d|%d|%d|%s",
-                     message.type, message.length, message.value.header.pid,
-                     message.value.header.account_id, message.value.header.password,
-                     message.value.header.op_delay_ms, message.value.create.account_id,
-                     message.value.create.balance, message.value.create.password);
+                        message.type, message.length, message.value.header.pid,
+                        message.value.header.account_id, message.value.header.password,
+                        message.value.header.op_delay_ms, message.value.create.account_id,
+                        message.value.create.balance, message.value.create.password);
     }
     else
     {
       length = snprintf(buffer, 512, "%d%d%d|%d|%s|%d|%d|%d",
-                     message.type, message.length, message.value.header.pid,
-                     message.value.header.account_id, message.value.header.password,
-                     message.value.header.op_delay_ms, message.value.transfer.account_id,
-                     message.value.transfer.amount);
+                        message.type, message.length, message.value.header.pid,
+                        message.value.header.account_id, message.value.header.password,
+                        message.value.header.op_delay_ms, message.value.transfer.account_id,
+                        message.value.transfer.amount);
     }
   }
 
-  message.length = length;
-  buffer[length] = '\0';
-  char *str = calloc(1, sizeof *str * length + 1);
-  strcpy(str, buffer);
+  return length;
+}
 
+int authentication(char *str)
+{
   int fd;
+
   if ((fd = open(SERVER_FIFO_PATH, O_WRONLY | O_CREAT | O_APPEND, 0660)) < 0)
   {
     exit(EXIT_FAILURE);
@@ -228,15 +211,34 @@ void sendMessage()
   {
     exit(EXIT_FAILURE);
   }
+
   close(fd);
+  return fd;
+}
 
-
-
+int openUserFile()
+{
   int ulog = open(USER_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0664);
+
   if (ulog < 0)
   {
     exit(EXIT_FAILURE);
   }
+
+  return ulog;
+}
+
+void sendMessage()
+{
+  size_t length = setMessage();
+  message.length = length;
+  buffer[length] = '\0';
+  char *str = calloc(1, sizeof *str * length + 1);
+  strcpy(str, buffer);
+
+  int fd = authentication(str);
+
+  int ulog = openUserFile();
 
   tlvPtr = &message;
   int savedStdout = dup(STDOUT_FILENO);
@@ -262,7 +264,7 @@ int main(int argc, char *argv[])
 
   operation();
 
-  setMessage();
+  setMessageDef();
 
   sendMessage();
 
