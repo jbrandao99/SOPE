@@ -1,4 +1,3 @@
-#include "../sope.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -11,6 +10,9 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+#include "../sope.h"
+#include "../log.c"
+
 bank_account_t bank_accounts[MAX_BANK_ACCOUNTS];
 unsigned int num_accounts = 0;
 int fd, fd_dummy;
@@ -20,6 +22,7 @@ static const char characters[] = "0123456789abcdef";
 sem_t sem1, sem2;
 int val1, val2;
 pthread_t *balcao;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //NS SE SE VAI USAR
 /* bool login(uint32_t id, char *pass)
@@ -287,12 +290,37 @@ void createSemaphore()
     sem_init(&sem1,0,num_banks);
     sem_getvalue(&sem1,&val1);
 
-    //logSyncMechSem(STDOUT_FILENO, MAIN_THREAD_ID, SYNC_OP_SEM_INIT, SYNC_ROLE_PRODUCER, 0, val1);
+    logSyncMechSem(STDOUT_FILENO, MAIN_THREAD_ID, SYNC_OP_SEM_INIT, SYNC_ROLE_PRODUCER, 0, val1);
 
     sem_init(&sem2, 0, 0);
     sem_getvalue(&sem2, &val2);
     
-    //logSyncMechSem(STDOUT_FILENO, MAIN_THREAD_ID, SYNC_OP_SEM_INIT, SYNC_ROLE_PRODUCER, 0, val2);
+    logSyncMechSem(STDOUT_FILENO, MAIN_THREAD_ID, SYNC_OP_SEM_INIT, SYNC_ROLE_PRODUCER, 0, val2);
+}
+
+void *processCounter(void *num)
+{
+    
+}
+
+void createCounter()
+{   
+    pthread_t balcao[num_banks];
+    int num_counter[num_banks];
+    for (int i = 0; i < num_banks; i++)
+    {
+        num_counter[i] = i +1;
+        if ((pthread_create(&balcao[i],NULL, processCounter ,&num_counter[i])!= 0)
+        {
+            printf("Error creating counter\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
+void destroyMutex()
+{
+    pthread_mutex_destroy(&mutex);
 }
 
 int main(int argc, char *argv[])
@@ -301,13 +329,25 @@ int main(int argc, char *argv[])
 
     srand(time(NULL));
 
+    openServerFile();
+
     createSemaphore();
+
+    createCounter();
+
+    logSyncMech(STDOUT_FILENO, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT,0);
+
+    pthread_mutex_lock(&mutex);
+
+    logDelay(STDOUT_FILENO, MAIN_THREAD_ID, 0);
 
     createAccount(ADMIN_ACCOUNT_ID, 0, argv[2]);
 
-    //logAccountCreation(STDOUT_FILENO, MAIN_THREAD_ID, &bank_accounts[ADMIN_ACCOUNT_ID]);
+    logAccountCreation(STDOUT_FILENO, MAIN_THREAD_ID, &bank_accounts[ADMIN_ACCOUNT_ID]);
 
-    openServerFile();
+    pthread_mutex_unlock(&mutex);
+
+    logSyncMech(STDOUT_FILENO, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT,0);
 
     createServerFIFO();
 
@@ -320,6 +360,8 @@ int main(int argc, char *argv[])
     destroyServerFIFO();
 
     closeServerFile();
+
+    destroyMutex();
 
     return 0;
 }
