@@ -11,8 +11,6 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#define PIPE_BUF 512
-
 static const char *OP_TYPE_STR[] = {
   [OP_CREATE_ACCOUNT] = "CREATE",
   [OP_BALANCE] = "BALANCE",
@@ -60,7 +58,7 @@ int logRequest(int fd, int id, const tlv_request_t *request) {
   if (!request)
     return -1;
 
-  char buffer[PIPE_BUF];
+  char buffer[512];
 
   switch (request->type) {
     case OP_CREATE_ACCOUNT:

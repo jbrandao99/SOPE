@@ -8,6 +8,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include "../log.c"
+#include <signal.h>
 
 int num_account;
 int num_delay;
@@ -16,13 +17,14 @@ int ulog;
 char size_pass[MAX_PASSWORD_LEN + 1];
 char args[3][512];
 char buffer[512];
+char replyArgs[5][512];
 
 req_header_t req_header;
 req_value_t req_value;
 req_create_account_t req_create_account;
 req_transfer_t req_transfer;
 tlv_request_t message;
-tlv_request_t *tlvPtr;
+tlv_reply_t reply;
 
 void verifyArgs(int argc, char *argv[])
 {
@@ -240,18 +242,96 @@ void sendMessage()
 
   int ulog = openUserFile();
 
-  tlvPtr = &message;
+  const tlv_request_t *requestPtr;
+  requestPtr = &message;
   int savedStdout = dup(STDOUT_FILENO);
   dup2(ulog, STDOUT_FILENO);
 
-  logRequest(fd, message.value.header.pid, tlvPtr);
+  logRequest(fd, message.value.header.pid, requestPtr);
   close(ulog);
   dup2(savedStdout, STDOUT_FILENO);
   close(savedStdout);
 }
 
+int setFIFO()
+{
+  int fd, aux;
+  char FIFO[USER_FIFO_PATH_LEN];
+
+  sprintf(FIFO, "%s%d", USER_FIFO_PATH_PREFIX, getpid());
+
+  if (mkfifo(FIFO, 0660) < 0)
+  {
+    if (errno != EEXIST)
+      exit(EXIT_FAILURE);
+  }
+
+  fd = open(FIFO, O_RDONLY);
+  aux = open(FIFO, O_WRONLY);
+
+  close(aux);
+  return fd;
+}
+
+void setReplyArgs(int fd)
+{
+  char buff[512];
+  int num = read(fd, buff, 512);
+  buff[num] = '\0';
+  char *token;
+  token = strtok(buff, "|");
+
+  for (int i = 0; token != NULL; i++)
+  {
+    strcpy(replyArgs[i], token);
+    token = strtok(NULL, "|");
+  }
+}
+
+void setReply()
+{
+  reply.length = atoi(replyArgs[0]);
+  reply.type = atoi(replyArgs[1]);
+  reply.value.header.account_id = atoi(replyArgs[2]);
+  reply.value.header.ret_code = atoi(replyArgs[3]);
+  if (reply.type == OP_BALANCE)
+    reply.value.balance.balance = atoi(replyArgs[4]);
+  if (reply.type == OP_TRANSFER)
+    reply.value.transfer.balance = atoi(replyArgs[4]);
+  if (reply.type == OP_SHUTDOWN)
+    reply.value.shutdown.active_offices = atoi(replyArgs[4]);
+}
+
+void Exit()
+{
+  exit(EXIT_FAILURE);
+}
+
 void receiveMessage()
 {
+  signal(SIGALRM, Exit);
+  alarm(FIFO_TIMEOUT_SECS);
+
+  int fd = setFIFO();
+
+  setReplyArgs(fd);
+
+  setReply();
+
+  close(fd);
+
+  int ulog = openUserFile();
+
+  const tlv_reply_t *replyPtr;
+  replyPtr = &reply;
+  int savedStdout = dup(STDOUT_FILENO);
+  dup2(ulog, STDOUT_FILENO);
+
+  
+  logReply(fd, getpid(), replyPtr);
+  close(ulog);
+  dup2(savedStdout, STDOUT_FILENO);
+  close(savedStdout);
 }
 
 int main(int argc, char *argv[])
