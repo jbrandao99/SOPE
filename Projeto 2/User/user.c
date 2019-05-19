@@ -251,8 +251,6 @@ void sendMessage()
   close(ulog);
   dup2(savedStdout, STDOUT_FILENO);
   close(savedStdout);
-
-  exit(EXIT_SUCCESS);
 }
 
 int setFIFO()
@@ -306,7 +304,7 @@ void setReply()
 
 void Exit()
 {
-  exit(EXIT_SUCCESS);
+  exit(EXIT_FAILURE);
 }
 
 void receiveMessage()
