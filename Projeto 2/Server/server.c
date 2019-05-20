@@ -33,7 +33,7 @@ pthread_mutex_t create = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t balancet = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t transfert = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t shutdownt = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
 unsigned int len = 0;
 int userFd;
 bool online = true;
@@ -93,9 +93,9 @@ void createServerFIFO()
 		else
 		{
 			printf("Can't create FIFO\n");
-			unlink(SERVER_FIFO_PATH);
-			exit(EXIT_FAILURE);
 		}
+		unlink(SERVER_FIFO_PATH);
+		exit(EXIT_FAILURE);
 	}
 	else
 	{
@@ -138,6 +138,7 @@ void closeServerFIFO()
 void shutdown()
 {
 	chmod(SERVER_FIFO_PATH, S_IRUSR | S_IRGRP | S_IROTH);
+	online = false;
 }
 
 int balance(uint32_t id)
@@ -357,7 +358,8 @@ void processRequest()
 			sem_getvalue(&sem1, &val1);
 			logSyncMechSem(slog, MAIN_THREAD_ID, SYNC_OP_SEM_POST, SYNC_ROLE_PRODUCER, tlv_request.value.header.pid, val1);
 
-			if (tlv_request.type == OP_SHUTDOWN) {
+			if (tlv_request.type == OP_SHUTDOWN)
+			{
 				logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, 0);
 				pthread_mutex_lock(&mutex);
 
@@ -365,12 +367,11 @@ void processRequest()
 				{
 					requests++;
 					logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_COND_SIGNAL, SYNC_ROLE_PRODUCER, tlv_request.value.header.pid);
-					pthread_cond_signal(&cond);
+					pthread_cond_signal(&cond1);
 				}
 
 				pthread_mutex_unlock(&mutex);
 				logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_PRODUCER, tlv_request.value.header.pid);
-
 				break;
 			}
 		}
@@ -386,7 +387,8 @@ void getRequest(tlv_request_t *request)
 	return;
 }
 
-bool openUserFIFO(pid_t pid) {
+bool openUserFIFO(pid_t pid)
+{
 	char *buf = malloc(sizeof(WIDTH_ID + 1));
 	sprintf(buf, "%*d", WIDTH_ID, pid);
 
@@ -396,215 +398,234 @@ bool openUserFIFO(pid_t pid) {
 	strcat(userFifo, buf);
 
 	userFd = open(userFifo, O_WRONLY);
-	if (userFd == -1) {
-		return -1;
+	if (userFd == -1)
+	{
+		return false;
 	}
 
-	return 0;
+	return true;
+}
+
+void condRequest(void *num)
+{
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, 0);
+	pthread_mutex_lock(&mutex);
+
+	while (!(requests > 0))
+	{
+		logSyncMech(slog, *(int *)num, SYNC_OP_COND_WAIT, SYNC_ROLE_CONSUMER, 0);
+		pthread_cond_wait(&cond1, &mutex);
+	}
+
+	requests--;
+
+	pthread_mutex_unlock(&mutex);
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, 0);
+}
+
+void accountRequest(tlv_reply_t tlv_reply, tlv_request_t tlv_request, void *num)
+{
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, tlv_request.value.header.pid);
+	pthread_mutex_lock(&create);
+
+	logDelay(slog, *(int *)num, tlv_request.value.header.op_delay_ms);
+	usleep(tlv_request.value.header.op_delay_ms * 1000);
+
+	len += sizeof(int) + sizeof(int);
+
+	if (tlv_request.value.header.account_id == ADMIN_ACCOUNT_ID)
+	{
+		int rc = createAccount(tlv_request.value.create.account_id, tlv_request.value.create.balance, tlv_request.value.create.password);
+		tlv_reply.value.header.ret_code = rc;
+		if (rc == RC_OK)
+			logAccountCreation(slog, *(int *)num, &bank_accounts[num_accounts - 1]);
+	}
+	else if (tlv_request.value.header.account_id != ADMIN_ACCOUNT_ID)
+	{
+		tlv_reply.value.header.ret_code = RC_OP_NALLOW;
+	}
+	else
+	{
+		tlv_reply.value.header.ret_code = RC_OTHER;
+	}
+
+	tlv_reply.value.header.account_id = *(int *)num;
+	len += sizeof(*(int *)num) + sizeof(tlv_reply.value.header.ret_code);
+
+	pthread_mutex_unlock(&create);
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, tlv_request.value.header.pid);
+}
+
+void balanceRequest(tlv_reply_t *tlv_reply, tlv_request_t tlv_request, void *num)
+{
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, tlv_request.value.header.pid);
+	pthread_mutex_lock(&balancet);
+
+	logDelay(slog, *(int *)num, tlv_request.value.header.op_delay_ms);
+	usleep(tlv_request.value.header.op_delay_ms * 1000);
+
+	len += sizeof(int) + sizeof(int);
+
+	if (tlv_request.value.header.account_id != ADMIN_ACCOUNT_ID)
+	{
+		tlv_reply->value.balance.balance = getBalance(tlv_request.value.header.account_id);
+		len += sizeof(int);
+	}
+	else if (tlv_request.value.header.account_id == ADMIN_ACCOUNT_ID)
+	{
+		tlv_reply->value.header.ret_code = RC_OP_NALLOW;
+	}
+	else
+	{
+		tlv_reply->value.header.ret_code = RC_OTHER;
+	}
+	pthread_mutex_unlock(&balancet);
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, tlv_request.value.header.pid);
+}
+
+void shutdownRequest(tlv_reply_t *tlv_reply, tlv_request_t tlv_request, void *num)
+{
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, tlv_request.value.header.pid);
+	pthread_mutex_lock(&shutdownt);
+
+	logDelay(slog, *(int *)num, tlv_request.value.header.op_delay_ms);
+	usleep(tlv_request.value.header.op_delay_ms * 1000);
+
+	len += sizeof(tlv_request.value.header.account_id) + sizeof(int);
+
+	if (tlv_request.value.header.account_id == ADMIN_ACCOUNT_ID)
+	{
+		shutdown();
+		tlv_reply->value.header.ret_code = RC_OK;
+		tlv_reply->value.shutdown.active_offices = process - 1;
+		len += sizeof(int);
+	}
+	else if (tlv_request.value.header.account_id != ADMIN_ACCOUNT_ID)
+	{
+		tlv_reply->value.header.ret_code = RC_OP_NALLOW;
+	}
+	else
+	{
+		tlv_reply->value.header.ret_code = RC_OTHER;
+	}
+
+	pthread_mutex_unlock(&shutdownt);
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_CONSUMER, tlv_request.value.header.pid);
+}
+
+void transferRequest(tlv_reply_t *tlv_reply, tlv_request_t tlv_request, void *num)
+{
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, tlv_request.value.header.pid);
+	pthread_mutex_lock(&transfert);
+
+	len += sizeof(int) + sizeof(int);
+	if (tlv_request.value.header.account_id == ADMIN_ACCOUNT_ID)
+	{
+		tlv_reply->value.header.ret_code = RC_OP_NALLOW;
+	}
+	else if (tlv_request.value.header.account_id != ADMIN_ACCOUNT_ID)
+	{
+		logDelay(slog, *(int *)num, tlv_request.value.header.op_delay_ms);
+		tlv_reply->value.header.ret_code =
+			transfer(tlv_request.value.header.account_id, tlv_request.value.transfer.amount, tlv_request.value.transfer.account_id, tlv_request.value.header.op_delay_ms * 1000);
+		len += sizeof(tlv_request.value.transfer.amount);
+	}
+	else
+	{
+		tlv_reply->value.header.ret_code = RC_OTHER;
+	}
+
+	bank_account_t *account = getAccount(tlv_request.value.header.account_id);
+	tlv_reply->value.transfer.balance = account->balance; // New balance
+
+	pthread_mutex_unlock(&transfert);
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, tlv_request.value.header.pid);
+}
+
+void writeRequest(tlv_reply_t tlv_reply, tlv_request_t tlv_request, void *num)
+{
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, tlv_request.value.header.pid);
+	pthread_mutex_lock(&replym);
+
+	tlv_reply.length = len;
+	tlv_reply.type = tlv_request.type;
+
+	logRequest(slog, tlv_request.value.header.pid, &tlv_request);
+
+	if (openUserFIFO(tlv_request.value.header.pid) != 0)
+	{
+		tlv_reply.value.header.ret_code = RC_USR_DOWN;
+	}
+
+	logReply(slog, *(int *)num, &tlv_reply);
+
+	write(userFd, &tlv_reply, sizeof(tlv_reply_t));
+	close(userFd);
+
+	len = 0;
+
+	pthread_mutex_unlock(&replym);
+	logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_CONSUMER, tlv_request.value.header.pid);
 }
 
 void *processCounter(void *num)
 {
 	logBankOfficeOpen(slog, *(int *)num, pthread_self());
 
-	while (online) {
-
-		logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, 0);
-		pthread_mutex_lock(&mutex);
-
-		while (!(requests > 0)) {
-			logSyncMech(slog, *(int *)num, SYNC_OP_COND_WAIT, SYNC_ROLE_CONSUMER, 0);
-			pthread_cond_wait(&cond, &mutex);
-		}
-
-		requests--;
-
-		pthread_mutex_unlock(&mutex);
-		logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, 0);
+	while (online)
+	{
+		condRequest(num);
 
 		tlv_reply_t tlv_reply;
-		tlv_request_t request;
+		tlv_request_t tlv_request;
 
-		getRequest(&request);
+		getRequest(&tlv_request);
 
 		sem_getvalue(&sem1, &val1);
-		logSyncMechSem(slog, *(int *)num, SYNC_OP_SEM_WAIT, SYNC_ROLE_CONSUMER, request.value.header.pid, val1);
+		logSyncMechSem(slog, *(int *)num, SYNC_OP_SEM_WAIT, SYNC_ROLE_CONSUMER, tlv_request.value.header.pid, val1);
 		sem_wait(&sem1);
 
 		if (!online)
 			break;
 
-		if (login(request.value.header.account_id, request.value.header.password)) {
+		if (login(tlv_request.value.header.account_id, tlv_request.value.header.password))
+		{
 			process++;
 
-			switch (request.type) {
-
-				/**     CREATE ACCOUNT      **/
-
+			switch (tlv_request.type)
+			{
 			case OP_CREATE_ACCOUNT:
-
-				logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid);
-				pthread_mutex_lock(&create);
-
-				logDelay(slog, *(int *)num, request.value.header.op_delay_ms);
-				usleep(request.value.header.op_delay_ms * 1000);
-
-				len += sizeof(int) + sizeof(int);
-
-				if (request.value.header.account_id == ADMIN_ACCOUNT_ID) {
-					int rc = createAccount(request.value.create.account_id, request.value.create.balance, request.value.create.password);
-					tlv_reply.value.header.ret_code = rc;
-					if (rc == RC_OK)
-						logAccountCreation(slog, *(int *)num, &bank_accounts[num_accounts - 1]);
-				}
-				else if (request.value.header.account_id != ADMIN_ACCOUNT_ID) {
-					tlv_reply.value.header.ret_code = RC_OP_NALLOW;
-				}
-
-				else {
-					tlv_reply.value.header.ret_code = RC_OTHER;
-				}
-				tlv_reply.value.header.account_id = *(int *)num;
-
-				len += sizeof(*(int *)num) + sizeof(tlv_reply.value.header.ret_code);
-
-				pthread_mutex_unlock(&create);
-				logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid);
-
+				accountRequest(tlv_reply, tlv_request, num);
 				break;
-
-
-				/**     CHECK BALANCE       **/
 
 			case OP_BALANCE:
-
-				logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid);
-				pthread_mutex_lock(&balancet);
-
-				logDelay(slog, *(int *)num, request.value.header.op_delay_ms);
-				usleep(request.value.header.op_delay_ms * 1000);
-
-				len += sizeof(int) + sizeof(int);
-
-				if (request.value.header.account_id != ADMIN_ACCOUNT_ID) {
-					tlv_reply.value.balance.balance = getBalance(request.value.header.account_id);
-					len += sizeof(int);
-				}
-
-				else if (request.value.header.account_id == ADMIN_ACCOUNT_ID) {
-					tlv_reply.value.header.ret_code = RC_OP_NALLOW;
-				}
-				else {
-					tlv_reply.value.header.ret_code = RC_OTHER;
-				}
-				pthread_mutex_unlock(&balancet);
-				logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid);
-
+				balanceRequest(&tlv_reply, tlv_request, num);
 				break;
-
-
-				/**     SERVER SHUTDOWN     **/
 
 			case OP_SHUTDOWN:
-
-				logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, request.value.header.pid);
-				pthread_mutex_lock(&shutdownt);
-
-				logDelay(slog, *(int *)num, request.value.header.op_delay_ms);
-				usleep(request.value.header.op_delay_ms * 1000);
-
-				len += sizeof(request.value.header.account_id) + sizeof(int);
-
-				if (request.value.header.account_id == ADMIN_ACCOUNT_ID) {
-					shutdown();
-					tlv_reply.value.header.ret_code = RC_OK;
-					tlv_reply.value.shutdown.active_offices = process - 1;
-					len += sizeof(int);
-				}
-
-				else if (request.value.header.account_id != ADMIN_ACCOUNT_ID) {
-					tlv_reply.value.header.ret_code = RC_OP_NALLOW;
-				}
-
-				else {
-					tlv_reply.value.header.ret_code = RC_OTHER;
-				}
-
-				pthread_mutex_unlock(&shutdownt);
-				logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_CONSUMER, request.value.header.pid);
-
+				shutdownRequest(&tlv_reply, tlv_request, num);
 				break;
-
-
-				/**     TRANSFERENCIA       **/
 
 			case OP_TRANSFER:
-
-				logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid);
-				pthread_mutex_lock(&transfert);
-
-				len += sizeof(int) + sizeof(int);
-				if (request.value.header.account_id == ADMIN_ACCOUNT_ID) {
-					tlv_reply.value.header.ret_code = RC_OP_NALLOW;
-				}
-
-				else if (request.value.header.account_id != ADMIN_ACCOUNT_ID) {
-					logDelay(slog, *(int *)num, request.value.header.op_delay_ms);
-					tlv_reply.value.header.ret_code =
-						transfer(request.value.header.account_id, request.value.transfer.amount, request.value.transfer.account_id, request.value.header.op_delay_ms * 1000);
-					len += sizeof(request.value.transfer.amount);
-				}
-				else {
-					tlv_reply.value.header.ret_code = RC_OTHER;
-				}
-
-				bank_account_t *account = getAccount(request.value.header.account_id);
-				tlv_reply.value.transfer.balance = account->balance; // New balance
-
-				pthread_mutex_unlock(&transfert);
-				logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid);
-
+				transferRequest(&tlv_reply, tlv_request, num);
 				break;
 
-				/**     DEFAULT     **/
 			default:
 				break;
 			}
-			process--; // Fim do processo
+			process--;
 		}
-
-		else {
-			len += 2 * sizeof(int);
+		else
+		{
 			tlv_reply.value.header.account_id = *(int *)num;
 			tlv_reply.value.header.ret_code = RC_LOGIN_FAIL;
+			len += 2 * sizeof(int);
 		}
 
-		logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, request.value.header.pid);
-		pthread_mutex_lock(&replym);
-
-		tlv_reply.length = len;
-		tlv_reply.type = request.type;
-
-		logRequest(slog, request.value.header.pid, &request);
-
-		if (openUserFIFO(request.value.header.pid) != 0) {
-			tlv_reply.value.header.ret_code = RC_USR_DOWN;
-		}
-
-		logReply(slog, *(int *)num, &tlv_reply);
-
-		write(userFd, &tlv_reply, sizeof(tlv_reply_t));
-
-		close(userFd);
-
-		len = 0; // Reset length to 0 (zero)
-
-		pthread_mutex_unlock(&replym);
-		logSyncMech(slog, *(int *)num, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_CONSUMER, request.value.header.pid);
+		writeRequest(tlv_reply,tlv_request,num);
 	}
 
 	logBankOfficeClose(slog, *(int *)num, pthread_self());
-
 	pthread_exit(NULL);
 }
 
@@ -628,6 +649,12 @@ void destroyMutex()
 	pthread_mutex_destroy(&mutex);
 	pthread_mutex_destroy(&bankm);
 	pthread_mutex_destroy(&req);
+	pthread_mutex_destroy(&replym);
+	pthread_mutex_destroy(&create);
+	pthread_mutex_destroy(&transfert);
+	pthread_mutex_destroy(&balancet);
+	pthread_mutex_destroy(&shutdownt);
+	pthread_cond_destroy(&cond1);
 }
 
 int main(int argc, char *argv[])
