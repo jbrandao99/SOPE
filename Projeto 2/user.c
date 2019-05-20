@@ -1,3 +1,4 @@
+#include "./sope.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -6,26 +7,20 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include "./log.c"
 #include <signal.h>
 
-#include "sope.h"
-#include "log.c"
-
 int num_account;
+char password[MAX_PASSWORD_LEN + 1];
 int num_delay;
 int op_number;
-int ulog;
-char size_pass[MAX_PASSWORD_LEN + 1];
+unsigned int length;
 char args[3][512];
-char buffer[512];
-char replyArgs[5][512];
-
-req_header_t req_header;
-req_value_t req_value;
 req_create_account_t req_create_account;
+req_value_t req_value;
 req_transfer_t req_transfer;
+req_header_t req_header;
 tlv_request_t message;
-tlv_reply_t reply;
 
 void verifyArgs(int argc, char *argv[])
 {
@@ -43,13 +38,12 @@ void verifyArgs(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  strcpy(size_pass, argv[2]);
-  if (strlen(size_pass) < MIN_PASSWORD_LEN || strlen(size_pass) > MAX_PASSWORD_LEN)
+  strcpy(password, argv[2]);
+  if (strlen(password) < MIN_PASSWORD_LEN || strlen(password) > MAX_PASSWORD_LEN)
   {
     printf("Invalid Password. Must have more than %d and less than %d characters\n", MIN_PASSWORD_LEN, MAX_PASSWORD_LEN);
     exit(EXIT_FAILURE);
   }
-  size_pass[strlen(size_pass)] = '\0';
 
   num_delay = atoi(argv[3]);
   if (num_delay > MAX_OP_DELAY_MS || num_delay < 1)
@@ -66,12 +60,16 @@ void verifyArgs(int argc, char *argv[])
   }
 }
 
-void sincronizeHeader()
+int openUserFile()
 {
-  req_header.pid = getpid();
-  req_header.account_id = num_account;
-  strcpy(req_header.password, size_pass);
-  req_header.op_delay_ms = num_delay;
+  int ulog = open(USER_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0777);
+
+  if (ulog < 0)
+  {
+    exit(EXIT_FAILURE);
+  }
+
+  return ulog;
 }
 
 bool checkArgs(int op)
@@ -106,11 +104,11 @@ void createAccount()
     exit(EXIT_FAILURE);
   }
 
-  req_value.header = req_header;
   req_create_account.account_id = atoi(args[0]);
   req_create_account.balance = atoi(args[1]);
   strcpy(req_create_account.password, args[2]);
   req_value.create = req_create_account;
+  length += sizeof(req_create_account.account_id) + sizeof(req_create_account.balance) + strlen(req_create_account.password);
 }
 
 void transfer()
@@ -120,15 +118,15 @@ void transfer()
     exit(EXIT_FAILURE);
   }
 
-  req_value.header = req_header;
   req_transfer.account_id = atoi(args[0]);
   req_transfer.amount = atoi(args[1]);
   req_value.transfer = req_transfer;
+  length += sizeof(req_transfer.account_id) + sizeof(req_transfer.amount);
 }
 
 void setArgs(char *arg5)
 {
-  char fifthArg[1000];
+  char fifthArg[512];
   memcpy(fifthArg, arg5, strlen(arg5) + 1);
   char *token;
   token = strtok(fifthArg, " ");
@@ -136,222 +134,152 @@ void setArgs(char *arg5)
   for (int i = 0; token != NULL; i++)
   {
     strcpy(args[i], token);
+    //printf("%s\n", args[i]);
     token = strtok(NULL, " ");
   }
 }
 
-void operation()
+void fillRequestFields()
 {
-  switch (op_number)
-  {
-  case (OP_CREATE_ACCOUNT):
-    createAccount();
-    break;
-  case (OP_BALANCE):
-    req_value.header = req_header;
-    break;
-  case (OP_TRANSFER):
-    transfer();
-    break;
-  case (OP_SHUTDOWN):
-    req_value.header = req_header;
-    break;
-  }
+  req_header.account_id = num_account;
+  req_header.op_delay_ms = num_delay;
+  strcpy(req_header.password, password);
+  req_header.pid = getpid();
+  req_value.header = req_header;
+  length += sizeof(req_header.account_id) + sizeof(req_header.op_delay_ms) + strlen(req_header.password) + sizeof(req_header.pid);
 }
 
-void setMessageDef()
+void fillRequestMessage()
 {
-  message.value = req_value;
   message.type = op_number;
-  message.length = sizeof(message);
+  message.value = req_value;
+  message.length = length;
 }
 
-size_t setMessage()
-{
-  size_t length;
-
-  if (message.type == OP_BALANCE || message.type == OP_SHUTDOWN)
-  {
-    length = snprintf(buffer, 512, "%d%d%d|%d|%s|%d|",
-                      message.type, message.length, message.value.header.pid,
-                      message.value.header.account_id, message.value.header.password,
-                      message.value.header.op_delay_ms);
-  }
-  else
-  {
-    if (message.type == OP_CREATE_ACCOUNT)
-    {
-      length = snprintf(buffer, 512, "%d%d%d|%d|%s|%d|%d|%d|%s",
-                        message.type, message.length, message.value.header.pid,
-                        message.value.header.account_id, message.value.header.password,
-                        message.value.header.op_delay_ms, message.value.create.account_id,
-                        message.value.create.balance, message.value.create.password);
-    }
-    else
-    {
-      length = snprintf(buffer, 512, "%d%d%d|%d|%s|%d|%d|%d",
-                        message.type, message.length, message.value.header.pid,
-                        message.value.header.account_id, message.value.header.password,
-                        message.value.header.op_delay_ms, message.value.transfer.account_id,
-                        message.value.transfer.amount);
-    }
-  }
-
-  return length;
-}
-
-int authentication(char *str)
+int openServerFIFO(tlv_reply_t *reply, int ulog)
 {
   int fd;
 
-  if ((fd = open(SERVER_FIFO_PATH, O_WRONLY | O_CREAT | O_APPEND, 0660)) < 0)
+  if ((fd = open(SERVER_FIFO_PATH, O_WRONLY)) < 0)
   {
+    reply->length = sizeof(op_type_t) + sizeof(ret_code_t);
+    reply->type = op_number;
+    reply->value.header.ret_code = RC_SRV_DOWN;
+
+    logReply(ulog, getpid(), reply);
     exit(EXIT_FAILURE);
   }
 
-  int wri = write(fd, str, message.length);
-  if (wri < 0)
-  {
-    exit(EXIT_FAILURE);
-  }
-
-  close(fd);
   return fd;
 }
 
-int openUserFile()
+int openUserFIFO(char *userFIFO)
 {
-  int ulog = open(USER_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0664);
+  int fd = -1;
 
-  if (ulog < 0)
+  while (fd < 0)
   {
-    exit(EXIT_FAILURE);
+    if ((fd = open(userFIFO, O_RDONLY | O_NONBLOCK)) < 0)
+    {
+      sleep(1);
+    }
   }
 
-  return ulog;
-}
-
-void sendMessage()
-{
-  size_t length = setMessage();
-  message.length = length;
-  buffer[length] = '\0';
-  char *str = calloc(1, sizeof *str * length + 1);
-  strcpy(str, buffer);
-
-  int fd = authentication(str);
-
-  int ulog = openUserFile();
-
-  const tlv_request_t *requestPtr;
-  requestPtr = &message;
-  int savedStdout = dup(STDOUT_FILENO);
-  dup2(ulog, STDOUT_FILENO);
-
-  logRequest(fd, message.value.header.pid, requestPtr);
-  close(ulog);
-  dup2(savedStdout, STDOUT_FILENO);
-  close(savedStdout);
-
-  exit(EXIT_SUCCESS);
-}
-
-int setFIFO()
-{
-  int fd, aux;
-  char FIFO[USER_FIFO_PATH_LEN];
-
-  sprintf(FIFO, "%s%d", USER_FIFO_PATH_PREFIX, getpid());
-
-  if (mkfifo(FIFO, 0660) < 0)
-  {
-    if (errno != EEXIST)
-      exit(EXIT_FAILURE);
-  }
-
-  fd = open(FIFO, O_RDONLY);
-  aux = open(FIFO, O_WRONLY);
-
-  close(aux);
   return fd;
 }
 
-void setReplyArgs(int fd)
+int readUserFIFO(tlv_reply_t *reply, int userFD)
 {
-  char buff[512];
-  int num = read(fd, buff, 512);
-  buff[num] = '\0';
-  char *token;
-  token = strtok(buff, "|");
-
-  for (int i = 0; token != NULL; i++)
+  unsigned int counter = 0;
+  while ((read(userFD, reply, sizeof(tlv_reply_t))) < 0)
   {
-    strcpy(replyArgs[i], token);
-    token = strtok(NULL, "|");
+    if (counter >= FIFO_TIMEOUT_SECS)
+    {
+      return -1;
+    }
+
+    counter++;
+    sleep(1);
   }
-}
-
-void setReply()
-{
-  reply.length = atoi(replyArgs[0]);
-  reply.type = atoi(replyArgs[1]);
-  reply.value.header.account_id = atoi(replyArgs[2]);
-  reply.value.header.ret_code = atoi(replyArgs[3]);
-  if (reply.type == OP_BALANCE)
-    reply.value.balance.balance = atoi(replyArgs[4]);
-  if (reply.type == OP_TRANSFER)
-    reply.value.transfer.balance = atoi(replyArgs[4]);
-  if (reply.type == OP_SHUTDOWN)
-    reply.value.shutdown.active_offices = atoi(replyArgs[4]);
-}
-
-void Exit()
-{
-  exit(EXIT_SUCCESS);
-}
-
-void receiveMessage()
-{
-  signal(SIGALRM, Exit);
-  alarm(FIFO_TIMEOUT_SECS);
-
-  int fd = setFIFO();
-
-  setReplyArgs(fd);
-
-  setReply();
-
-  close(fd);
-
-  int ulog = openUserFile();
-
-  const tlv_reply_t *replyPtr;
-  replyPtr = &reply;
-  int savedStdout = dup(STDOUT_FILENO);
-  dup2(ulog, STDOUT_FILENO);
-
-  
-  logReply(fd, getpid(), replyPtr);
-  close(ulog);
-  dup2(savedStdout, STDOUT_FILENO);
-  close(savedStdout);
+  return 0;
 }
 
 int main(int argc, char *argv[])
 {
   verifyArgs(argc, argv);
-
-  sincronizeHeader();
-
   setArgs(argv[5]);
 
-  operation();
+  tlv_reply_t *tlv_reply = (tlv_reply_t *)malloc(sizeof(tlv_reply_t));
+  mode_t old_mask = umask(0000);
 
-  setMessageDef();
+  //Get FIFO name
+  char *pidBuffer = malloc(sizeof(WIDTH_ID));
+  pid_t pid = getpid();
+  sprintf(pidBuffer, "%*d", WIDTH_ID, pid);
+  char *userFIFO = malloc(USER_FIFO_PATH_LEN);
+  strcpy(userFIFO, USER_FIFO_PATH_PREFIX);
+  strcat(userFIFO, pidBuffer);
 
-  sendMessage();
+  //Make FIFO
+  if (mkfifo(userFIFO, 0777) != 0)
+  {
+    exit(EXIT_FAILURE);
+  }
 
-  receiveMessage();
+  //Check type of usage
+  if (num_account == 0)
+  {
+    if (op_number == OP_CREATE_ACCOUNT)
+    {
+      createAccount();
+    }
+  }
+  else
+  {
+    if (op_number == OP_TRANSFER)
+    {
+      transfer();
+    }
+  }
+
+  //Fill request header fields
+  fillRequestFields();
+
+  //Fill request message
+  fillRequestMessage();
+
+  int ulog = openUserFile();
+  logRequest(ulog, getpid(), &message);
+
+  int serverFD = openServerFIFO(tlv_reply, ulog);
+
+  write(serverFD, &message, sizeof(tlv_request_t));
+
+  int userFD = openUserFIFO(userFIFO);
+
+  if (readUserFIFO(tlv_reply, userFD) != 0)
+  {
+    tlv_reply->length = sizeof(op_type_t) + sizeof(ret_code_t);
+    tlv_reply->type = op_number;
+    tlv_reply->value.header.ret_code = RC_SRV_TIMEOUT;
+
+    logReply(ulog, getpid(), tlv_reply);
+
+    free(tlv_reply);
+    close(ulog);
+    close(userFD);
+    unlink(userFIFO);
+    umask(old_mask);
+    exit(EXIT_FAILURE);
+  }
+
+  logReply(ulog, getpid(), tlv_reply);
+
+  free(tlv_reply);
+  close(ulog);
+  close(userFD);
+  unlink(userFIFO);
+  umask(old_mask);
 
   return 0;
 }
