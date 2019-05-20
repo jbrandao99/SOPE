@@ -1,4 +1,3 @@
-#include "../sope.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -7,8 +6,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
-#include "../log.c"
 #include <signal.h>
+
+#include "sope.h"
+#include "log.c"
 
 int num_account;
 int num_delay;

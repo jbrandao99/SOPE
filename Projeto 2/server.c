@@ -10,8 +10,8 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#include "../sope.h"
-#include "../log.c"
+#include "sope.h"
+#include "log.c"
 
 bank_account_t bank_accounts[MAX_BANK_ACCOUNTS];
 unsigned int num_accounts = 0;
