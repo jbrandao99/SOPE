@@ -65,18 +65,6 @@ int processing = 0; // Numero de balcoes a processar o pedido
 
 static const char carac[] = "0123456789abcdef";
 
-char *getSalt()
-  {
-    unsigned int i;
-  	char *salt = (char *)malloc((SALT_LEN + 1) * sizeof(char));
-  	for (i = 0; i < SALT_LEN; i++)
-  	{
-  		int j = rand() % (int)(sizeof(carac) - 1);
-  		salt[i] = carac[j];
-  	}
-  	salt[i] = '\0';
-  	return salt;
-}
 
 char *getHash(char *pass, char *salt){
     FILE *fp;
@@ -93,6 +81,7 @@ char *getHash(char *pass, char *salt){
     }
     return NULL;
 }
+
 
 bank_account_t *getBankAccount(uint32_t id){
     bank_account_t *acc = (bank_account_t *)malloc(sizeof(bank_account_t));
@@ -144,6 +133,21 @@ void makeServerFIFO(){
 	}
 }
 
+void destroyServerFIFO()
+
+{
+	if (unlink(SERVER_FIFO_PATH) < 0)
+	{
+		printf("Error when destroying FIFO %s\n", SERVER_FIFO_PATH);
+	}
+
+	else
+	{
+		printf("FIFO %s has been destroyed\n", SERVER_FIFO_PATH);
+		exit(EXIT_SUCCESS);
+	}
+}
+
 void openServerFIFO(){
   if ((srv_fifo_fd = open(SERVER_FIFO_PATH, O_RDONLY)) != -1)
   {
@@ -153,6 +157,27 @@ void openServerFIFO(){
   {
     printf("FIFO %s openned in WRITEONLY mode\n", SERVER_FIFO_PATH);
   }
+}
+
+void closeServerFIFO()
+
+{
+  close(srv_fifo_fd);
+	close(fd_dummy);
+  unlink(SERVER_FIFO_PATH);
+
+}
+
+void shutdown(){
+
+   chmod(SERVER_FIFO_PATH,S_IRUSR|S_IRUSR|S_IROTH);
+    is_open = 0;    //ENCERRA O LOOP DA FUNCAO BALCAOELETRONICO
+
+    for(int i = 0; i <= num_threads; i++)
+    {
+      sem_post(&sem);
+    }
+
 }
 
 
@@ -178,27 +203,19 @@ void processArgs(int argc,char *argv[]){
     }
 }
 
-void put_request(tlv_request_t tlv_request)
-
-{
-    pthread_mutex_lock(&req);
-
-    num_requests[num_request] = tlv_request;
-    num_request = (num_request + 1) % MAX_BANK_ACCOUNTS;
-
-    pthread_mutex_unlock(&req);
-    return;
+char *getSalt()
+  {
+    unsigned int i;
+  	char *salt = (char *)malloc((SALT_LEN + 1) * sizeof(char));
+  	for (i = 0; i < SALT_LEN; i++)
+  	{
+  		int j = rand() % (int)(sizeof(carac) - 1);
+  		salt[i] = carac[j];
+  	}
+  	salt[i] = '\0';
+  	return salt;
 }
 
-void get_request(tlv_request_t *request){
-    pthread_mutex_lock(&req);
-
-    *request = num_requests[num_requests2];
-    num_requests2 = (num_requests2 + 1) % MAX_BANK_ACCOUNTS;
-
-    pthread_mutex_unlock(&req);
-    return;
-}
 
 int accountExists(uint32_t id){
 	for (  int i = 0; i < num_accounts; i++)
@@ -209,6 +226,15 @@ int accountExists(uint32_t id){
 		}
 	}
 	return false;
+}
+
+
+void addAccount(bank_account_t bank_account)
+
+{
+	bank_accounts[num_accounts] = bank_account;
+	num_accounts++;
+
 }
 
 int createAccount(uint32_t id, uint32_t balance, char *pass){
@@ -224,9 +250,7 @@ int createAccount(uint32_t id, uint32_t balance, char *pass){
     char *newpass = pass;
     char *hash = getHash(newpass, salt);
     strcpy(acc.hash, hash);
-
-    bank_accounts[num_accounts] = acc;
-    num_accounts++;
+    addAccount(acc);
     return RC_OK;
 }
 
@@ -273,6 +297,39 @@ int transfer(uint32_t id_source, uint32_t id_destination,uint32_t amount, uint32
   return RC_OK;
 }
 
+void openServerFile()
+{
+	slog = open(SERVER_LOGFILE, O_WRONLY | O_TRUNC | O_CREAT, 0777);
+	if (slog == -1)
+
+	{
+		printf("Error opening server log file\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
+void closeServerFile()
+
+{
+	close(slog);
+}
+
+void esperaBalcao()
+{
+	for (int i = 0; i < num_threads; i++)
+	{
+		pthread_join(balcao[i], NULL);
+	}
+}
+
+void createSemaphore()
+
+{
+	sem_init(&sem, 0,0);
+	sem_getvalue(&sem, &val);
+	logSyncMechSem(slog, MAIN_THREAD_ID, SYNC_OP_SEM_INIT, SYNC_ROLE_PRODUCER, 0, val);
+
+}
 
 int getBalance(uint32_t id){
     bank_account_t *acc = getBankAccount(id);
@@ -283,70 +340,73 @@ int getBalance(uint32_t id){
     return acc->balance;
 }
 
-void shutdown(){
+void put_request(tlv_request_t tlv_request)
 
-   chmod(SERVER_FIFO_PATH,S_IRUSR|S_IRUSR|S_IROTH);
-    is_open = 0;    //ENCERRA O LOOP DA FUNCAO BALCAOELETRONICO
+{
+    pthread_mutex_lock(&req);
 
-    for(int i = 0; i <= num_threads; i++)
-    {
-      sem_post(&sem);
-    }
+    num_requests[num_request] = tlv_request;
+    num_request = (num_request + 1) % MAX_BANK_ACCOUNTS;
 
+    pthread_mutex_unlock(&req);
+    return;
 }
 
-void transferRequest(tlv_reply_t *tlv_reply,tlv_request_t request, void *num)
+void processRequest()
 {
-  length += sizeof(int) + sizeof(int);
-  if(request.value.header.account_id == ADMIN_ACCOUNT_ID){    //SE FOR ADMINISTRADOR
-      tlv_reply->value.header.ret_code = RC_OP_NALLOW;
+  while(is_open){
+
+      tlv_request_t request;
+
+      if(read(srv_fifo_fd, &request, sizeof(tlv_request_t)) > 0){
+
+          logRequest(slog, request.value.header.pid, &request);
+
+          put_request(request);
+
+          sem_post(&sem);
+          sem_getvalue(&sem,&val);
+          logSyncMechSem(slog, MAIN_THREAD_ID, SYNC_OP_SEM_POST, SYNC_ROLE_PRODUCER, request.value.header.pid, val);
+
+          if(request.type == OP_SHUTDOWN){
+              logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, 0);
+              pthread_mutex_lock(&mut);
+
+              for(int i = 0; i < num_threads; i++){
+                  pedido++;
+                  logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_COND_SIGNAL, SYNC_ROLE_PRODUCER, request.value.header.pid);
+                  pthread_cond_signal(&cond);
+              }
+
+              pthread_mutex_unlock(&mut);
+              logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_PRODUCER, request.value.header.pid);
+
+              break;
+          }
+          else{
+              logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, 0);
+              pthread_mutex_lock(&mut);
+
+              pedido++;
+              logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_COND_SIGNAL, SYNC_ROLE_PRODUCER, request.value.header.pid);
+              pthread_cond_signal(&cond);
+
+              pthread_mutex_unlock(&mut);
+              logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_PRODUCER, request.value.header.pid);
+          }
+      }
+
   }
-  else if(request.value.header.account_id != ADMIN_ACCOUNT_ID){   //NAO ADMINISTRADOR
-      logDelay(slog, *(int *) num, request.value.header.op_delay_ms);
-      tlv_reply->value.header.ret_code =transfer(request.value.header.account_id, request.value.transfer.account_id,request.value.transfer.amount,request.value.header.op_delay_ms * 1000);
-      length += sizeof(request.value.transfer.amount);
-  }
-  else{      //OUTRO ERRO
-      tlv_reply->value.header.ret_code = RC_OTHER;
-  }
-  bank_account_t *account = getBankAccount(request.value.header.account_id);
-  tlv_reply->value.transfer.balance = account->balance; // New balance
 }
 
-void shutdownRequest(tlv_reply_t *tlv_reply,tlv_request_t request, void *num)
-{
-  logDelay(slog, *(int *) num, request.value.header.op_delay_ms);
-  usleep(request.value.header.op_delay_ms * 1000);
-  length += sizeof(request.value.header.account_id) + sizeof(int);
-  if(request.value.header.account_id == ADMIN_ACCOUNT_ID){    //SE FOR ADMINISTRADOR
-      shutdown();
-      tlv_reply->value.header.ret_code = RC_OK;
-      tlv_reply->value.shutdown.active_offices = processing-1;
-      length += sizeof(int);
-  }
-  else if(request.value.header.account_id != ADMIN_ACCOUNT_ID){      //NAO ADMINISTRADOR
-      tlv_reply->value.header.ret_code = RC_OP_NALLOW;
-  }
-  else{                                                            //OUTRO ERRO
-      tlv_reply->value.header.ret_code = RC_OTHER;
-  }
-}
+void get_request(tlv_request_t *request){
+    pthread_mutex_lock(&req);
 
-void balanceRequest(tlv_reply_t *tlv_reply,tlv_request_t request, void *num)
-{
-  logDelay(slog, *(int *) num, request.value.header.op_delay_ms);
-  usleep(request.value.header.op_delay_ms * 1000);
-  length += sizeof(int) + sizeof(int);
-  if(request.value.header.account_id != ADMIN_ACCOUNT_ID){             //SE FOR ADMINISTRADOR
-      tlv_reply->value.balance.balance = getBalance(request.value.header.account_id);
-      length += sizeof(int);
-  }
-  else if(request.value.header.account_id == ADMIN_ACCOUNT_ID){                //NAO ADMINISTRADOR
-      tlv_reply->value.header.ret_code = RC_OP_NALLOW;
-  }
-  else{                                                           //OUTRO ERRO
-      tlv_reply->value.header.ret_code = RC_OTHER;
-  }
+    *request = num_requests[num_requests2];
+    num_requests2 = (num_requests2 + 1) % MAX_BANK_ACCOUNTS;
+
+    pthread_mutex_unlock(&req);
+    return;
 }
 
 void accountRequest(tlv_reply_t tlv_reply,tlv_request_t request, void *num)
@@ -368,6 +428,61 @@ void accountRequest(tlv_reply_t tlv_reply,tlv_request_t request, void *num)
   }
   tlv_reply.value.header.account_id = *(int *) num;
   length += sizeof(*(int *)num) + sizeof(tlv_reply.value.header.ret_code);
+}
+
+void balanceRequest(tlv_reply_t *tlv_reply,tlv_request_t request, void *num)
+{
+  logDelay(slog, *(int *) num, request.value.header.op_delay_ms);
+  usleep(request.value.header.op_delay_ms * 1000);
+  length += sizeof(int) + sizeof(int);
+  if(request.value.header.account_id != ADMIN_ACCOUNT_ID){             //SE FOR ADMINISTRADOR
+      tlv_reply->value.balance.balance = getBalance(request.value.header.account_id);
+      length += sizeof(int);
+  }
+  else if(request.value.header.account_id == ADMIN_ACCOUNT_ID){                //NAO ADMINISTRADOR
+      tlv_reply->value.header.ret_code = RC_OP_NALLOW;
+  }
+  else{                                                           //OUTRO ERRO
+      tlv_reply->value.header.ret_code = RC_OTHER;
+  }
+}
+
+void shutdownRequest(tlv_reply_t *tlv_reply,tlv_request_t request, void *num)
+{
+  logDelay(slog, *(int *) num, request.value.header.op_delay_ms);
+  usleep(request.value.header.op_delay_ms * 1000);
+  length += sizeof(request.value.header.account_id) + sizeof(int);
+  if(request.value.header.account_id == ADMIN_ACCOUNT_ID){    //SE FOR ADMINISTRADOR
+      shutdown();
+      tlv_reply->value.header.ret_code = RC_OK;
+      tlv_reply->value.shutdown.active_offices = processing-1;
+      length += sizeof(int);
+  }
+  else if(request.value.header.account_id != ADMIN_ACCOUNT_ID){      //NAO ADMINISTRADOR
+      tlv_reply->value.header.ret_code = RC_OP_NALLOW;
+  }
+  else{                                                            //OUTRO ERRO
+      tlv_reply->value.header.ret_code = RC_OTHER;
+  }
+}
+
+
+void transferRequest(tlv_reply_t *tlv_reply,tlv_request_t request, void *num)
+{
+  length += sizeof(int) + sizeof(int);
+  if(request.value.header.account_id == ADMIN_ACCOUNT_ID){    //SE FOR ADMINISTRADOR
+      tlv_reply->value.header.ret_code = RC_OP_NALLOW;
+  }
+  else if(request.value.header.account_id != ADMIN_ACCOUNT_ID){   //NAO ADMINISTRADOR
+      logDelay(slog, *(int *) num, request.value.header.op_delay_ms);
+      tlv_reply->value.header.ret_code =transfer(request.value.header.account_id, request.value.transfer.account_id,request.value.transfer.amount,request.value.header.op_delay_ms * 1000);
+      length += sizeof(request.value.transfer.amount);
+  }
+  else{      //OUTRO ERRO
+      tlv_reply->value.header.ret_code = RC_OTHER;
+  }
+  bank_account_t *account = getBankAccount(request.value.header.account_id);
+  tlv_reply->value.transfer.balance = account->balance; // New balance
 }
 
 
@@ -463,50 +578,6 @@ void *balcaoEletronico(void *num){
     pthread_exit(NULL);
 }
 
-void destroyMutex(){
-    pthread_mutex_destroy(&mut);
-    pthread_mutex_destroy(&create_lock);
-    pthread_mutex_destroy(&req);
-    pthread_mutex_destroy(&transfer_lock);
-    pthread_mutex_destroy(&shutdown_lock);
-    pthread_mutex_destroy(&balance_lock);
-    pthread_mutex_destroy(&reply_lock);
-
-    pthread_cond_destroy(&cond);
-}
-
-void openServerFile()
-{
-	slog = open(SERVER_LOGFILE, O_WRONLY | O_TRUNC | O_CREAT, 0777);
-	if (slog == -1)
-
-	{
-		printf("Error opening server log file\n");
-		exit(EXIT_FAILURE);
-	}
-}
-
-void closeServerFile()
-
-{
-
-	close(slog);
-
-}
-
-void closeServerFIFO()
-
-{
-  close(srv_fifo_fd);
-	close(fd_dummy);
-  unlink(SERVER_FIFO_PATH);
-
-}
-
-
-
-
-
 void createCounter()
 {
 pthread_t balcao[num_threads];
@@ -520,99 +591,18 @@ for(int i = 0; i < num_threads; i++){
 }
 }
 
+void destroyMutex(){
+    pthread_mutex_destroy(&mut);
+    pthread_mutex_destroy(&create_lock);
+    pthread_mutex_destroy(&req);
+    pthread_mutex_destroy(&transfer_lock);
+    pthread_mutex_destroy(&shutdown_lock);
+    pthread_mutex_destroy(&balance_lock);
+    pthread_mutex_destroy(&reply_lock);
 
-void esperaBalcao()
-
-{
-
-	for (int i = 0; i < num_threads; i++)
-
-	{
-		pthread_join(balcao[i], NULL);
-	}
-
+    pthread_cond_destroy(&cond);
 }
 
-void processRequest()
-{
-  while(is_open){
-
-      tlv_request_t request;
-
-      if(read(srv_fifo_fd, &request, sizeof(tlv_request_t)) > 0){
-
-          logRequest(slog, request.value.header.pid, &request);
-
-          put_request(request);
-
-          sem_post(&sem);
-          sem_getvalue(&sem,&val);
-          logSyncMechSem(slog, MAIN_THREAD_ID, SYNC_OP_SEM_POST, SYNC_ROLE_PRODUCER, request.value.header.pid, val);
-
-          if(request.type == OP_SHUTDOWN){
-              logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, 0);
-              pthread_mutex_lock(&mut);
-
-              for(int i = 0; i < num_threads; i++){
-                  pedido++;
-                  logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_COND_SIGNAL, SYNC_ROLE_PRODUCER, request.value.header.pid);
-                  pthread_cond_signal(&cond);
-              }
-
-              pthread_mutex_unlock(&mut);
-              logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_PRODUCER, request.value.header.pid);
-
-              break;
-          }
-          else{
-              logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, 0);
-              pthread_mutex_lock(&mut);
-
-              pedido++;
-              logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_COND_SIGNAL, SYNC_ROLE_PRODUCER, request.value.header.pid);
-              pthread_cond_signal(&cond);
-
-              pthread_mutex_unlock(&mut);
-              logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_PRODUCER, request.value.header.pid);
-          }
-      }
-
-  }
-}
-
-
-void destroyServerFIFO()
-
-{
-
-	if (unlink(SERVER_FIFO_PATH) < 0)
-
-	{
-
-		printf("Error when destroying FIFO %s\n", SERVER_FIFO_PATH);
-
-	}
-
-	else
-
-	{
-
-		printf("FIFO %s has been destroyed\n", SERVER_FIFO_PATH);
-
-		exit(EXIT_SUCCESS);
-
-	}
-
-}
-
-void createSemaphore()
-
-{
-	sem_init(&sem, 0,0);
-	sem_getvalue(&sem, &val);
-	logSyncMechSem(slog, MAIN_THREAD_ID, SYNC_OP_SEM_INIT, SYNC_ROLE_PRODUCER, 0, val);
-
-}
 
 void closeSem()
 {
