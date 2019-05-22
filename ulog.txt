@@ -1,0 +1,2 @@
+E - 02392 - [ 44 bytes] 02392 (0000, "wrong_password")       [   10 ms] CREATE   0001         25€ "top_secret"
+R - 02392 - [  8 bytes] 0000   CREATE     SRV_DOWN

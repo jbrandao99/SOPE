@@ -384,14 +384,14 @@ void processRequest()
 		else
 		{
 			logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, 0);
-                pthread_mutex_lock(&mut);
+                pthread_mutex_lock(&mutex);
                 
-                pedido++;
-                logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_COND_SIGNAL, SYNC_ROLE_PRODUCER, request.value.header.pid);
-                pthread_cond_signal(&cond);
+                requests++;
+                logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_COND_SIGNAL, SYNC_ROLE_PRODUCER, tlv_request.value.header.pid);
+                pthread_cond_signal(&cond1);
                
-                pthread_mutex_unlock(&mut);
-                logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_PRODUCER, request.value.header.pid);
+                pthread_mutex_unlock(&mutex);
+                logSyncMech(slog, MAIN_THREAD_ID, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_PRODUCER, tlv_request.value.header.pid);
 		}
 		
 	}
